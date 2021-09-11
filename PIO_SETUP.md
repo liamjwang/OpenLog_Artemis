@@ -2,11 +2,12 @@
 - You won't need to install the 20+ Arduino dependencies manually!
 - Specify build flags like `ICM_20948_USE_DMP` in the platformio.ini instead of modifying library headers!
 - Use fixed version numbers for dependencies so your project won't break when a library updates!
+- It's optional to use; you can switch back to the Arduino IDE with no additional configuration!
 
 
 ## Setup for Development with PlatformIO
 
-- Install PlatformIO Core `https://platformio.org/install`
+- Install PlatformIO Core: [https://platformio.org/install](https://platformio.org/install)
 - Follow these directions to install the apollo3blue platform: [https://github.com/nigelb/platform-apollo3blue#install](https://github.com/nigelb/platform-apollo3blue#install)
 
 ## Build and Upload
