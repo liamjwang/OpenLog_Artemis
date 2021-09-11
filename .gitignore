@@ -32,7 +32,8 @@ $RECYCLE.BIN/
 .LSOverride
 
 # Icon must ends with two \r.
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -46,4 +47,4 @@ Icon
 CMakeListsPrivate.txt
 cmake-build-*/
 
-
+.idea
