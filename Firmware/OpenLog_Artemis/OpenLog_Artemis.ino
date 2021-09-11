@@ -1078,7 +1078,6 @@ void beginIMU()
     else
     {
       // Initialize the DMP
-        myICM.enableDebugging(Serial);
       ICM_20948_Status_e retval = myICM.initializeDMP();
       if (retval != ICM_20948_Stat_Ok)
       {
