@@ -1,14 +1,13 @@
+##Why switch to PlatformIO?
+- You won't need to install the 20+ Arduino dependencies manually!
+- Specify build flags like `ICM_20948_USE_DMP` in the platformio.ini instead of modifying library headers!
+- Use fixed version numbers for dependencies so your project won't break when a library updates!
+
+
 ## Setup for Development with PlatformIO
 
-_No need to install Arduino dependencies manually!_
-
 - Install PlatformIO Core `https://platformio.org/install`
-- Install the Sparkfun Arduino Apollo3 framework in your .platformio directory (use PowerShell if you're using Windows)
-  - `cd ~/.platformio/packages`
-  - `git clone --recurse-submodules --depth 1 --branch v1.2.3 https://github.com/sparkfun/Arduino_Apollo3.git framework-arduinoapollo3@1.2.3`
-- Install the apollo3blue platform ([https://github.com/nigelb/platform-apollo3blue](https://github.com/nigelb/platform-apollo3blue))
-  - `cd ~/.platformio/platforms`
-  - `git clone https://github.com/nigelb/platform-apollo3blue.git apollo3blue`
+- Follow these directions to install the apollo3blue platform: [https://github.com/nigelb/platform-apollo3blue#install](https://github.com/nigelb/platform-apollo3blue#install)
 
 ## Build and Upload
 
