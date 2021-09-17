@@ -234,6 +234,10 @@ void getData()
         sprintf(tempData, "%s,", tempData1); updateBLECharacteristic(&bleCharacteristic, tempData);
         sprintf(tempData, "%s,", tempData2); updateBLECharacteristic(&bleCharacteristic, tempData);
         sprintf(tempData, "%s,", tempData3); updateBLECharacteristic(&bleCharacteristic, tempData);
+//        if ((float)dmpData.Quat6.Data.Q1 != lastMeasurementValue) {
+//            lastMeasurementValue = (float)dmpData.Quat6.Data.Q1;
+//            measurementCount++;
+//        }
       }
       if (settings.imuLogDMPQuat9)
       {
@@ -254,6 +258,10 @@ void getData()
         sprintf(tempData, "%d,", dmpData.Raw_Accel.Data.X); updateBLECharacteristic(&bleCharacteristic, tempData);
         sprintf(tempData, "%d,", dmpData.Raw_Accel.Data.Y); updateBLECharacteristic(&bleCharacteristic, tempData);
         sprintf(tempData, "%d,", dmpData.Raw_Accel.Data.Z); updateBLECharacteristic(&bleCharacteristic, tempData);
+//        if ((float)dmpData.Raw_Accel.Data.X != lastMeasurementValue) {
+//            lastMeasurementValue = (float)dmpData.Raw_Accel.Data.X;
+//            measurementCount++;
+//        }
       }
       if (settings.imuLogDMPGyro)
       {

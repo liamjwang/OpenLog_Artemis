@@ -283,6 +283,7 @@ icm_20948_DMP_data_t dmpData; // Global storage for the DMP data - extracted fro
 uint64_t measurementStartTime; //Used to calc the actual update rate. Max is ~80,000,000ms in a 24 hour period.
 uint64_t lastSDFileNameChangeTime; //Used to calculate the interval since the last SD filename change
 unsigned long measurementCount = 0; //Used to calc the actual update rate.
+float lastMeasurementValue = 0; //Used to calc the actual update rate.
 unsigned long measurementTotal = 0; //The total number of recorded measurements. (Doesn't get reset when the menu is opened)
 char outputData[512 * 2]; //Factor of 512 for easier recording to SD in 512 chunks
 unsigned long lastReadTime = 0; //Used to delay until user wants to record a new reading
