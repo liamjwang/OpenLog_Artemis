@@ -170,15 +170,16 @@ const byte PIN_SPI_COPI = 7;
 const byte EXTRA_MUX_STARTUP_BYTES = 3;
 
 enum returnStatus {
-  STATUS_GETBYTE_TIMEOUT = 255,
-  STATUS_GETNUMBER_TIMEOUT = -123455555,
-  STATUS_PRESSED_X,
+    STATUS_GETBYTE_TIMEOUT = 255,
+    STATUS_GETNUMBER_TIMEOUT = -123455555,
+    STATUS_PRESSED_X,
 };
 
 //Setup Qwiic Port
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
-TwoWire qwiic(PIN_QWIIC_SDA,PIN_QWIIC_SCL); //Will use pads 8/9
+
+TwoWire qwiic(PIN_QWIIC_SDA, PIN_QWIIC_SCL); //Will use pads 8/9
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //EEPROM for storing settings
@@ -223,6 +224,7 @@ const int sdPowerDownDelay = 100; //Delay for this many ms before turning off th
 //Add RTC interface for Artemis
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include "RTC.h" //Include RTC library included with the Aruino_Apollo3 core
+
 Apollo3RTC myRTC; //Create instance of RTC class
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -243,6 +245,7 @@ int charsReceived = 0; //Used for verifying/debugging serial reception
 //Add ICM IMU interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
+
 ICM_20948_SPI myICM;
 icm_20948_DMP_data_t dmpData; // Global storage for the DMP data - extracted from the FIFO
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -308,17 +311,21 @@ uint8_t getByteChoice(int numberOfSeconds, bool updateDZSERIAL = false); // Head
 
 // gfvalvo's flash string helper code: https://forum.arduino.cc/index.php?topic=533118.msg3634809#msg3634809
 void SerialPrint(const char *);
+
 void SerialPrint(const __FlashStringHelper *);
+
 void SerialPrintln(const char *);
+
 void SerialPrintln(const __FlashStringHelper *);
+
 void DoSerialPrint(char (*)(const char *), const char *, bool newLine = false);
 
-#define DUMP( varname ) {Serial.printf("%s: %d\r\n", #varname, varname); if (settings.useTxRxPinsForTerminal == true) Serial1.printf("%s: %d\r\n", #varname, varname);}
-#define SerialPrintf1( var ) {Serial.printf( var ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var );}
-#define SerialPrintf2( var1, var2 ) {Serial.printf( var1, var2 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2 );}
-#define SerialPrintf3( var1, var2, var3 ) {Serial.printf( var1, var2, var3 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2, var3 );}
-#define SerialPrintf4( var1, var2, var3, var4 ) {Serial.printf( var1, var2, var3, var4 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2, var3, var4 );}
-#define SerialPrintf5( var1, var2, var3, var4, var5 ) {Serial.printf( var1, var2, var3, var4, var5 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2, var3, var4, var5 );}
+#define DUMP(varname) {Serial.printf("%s: %d\r\n", #varname, varname); if (settings.useTxRxPinsForTerminal == true) Serial1.printf("%s: %d\r\n", #varname, varname);}
+#define SerialPrintf1(var) {Serial.printf( var ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var );}
+#define SerialPrintf2(var1, var2) {Serial.printf( var1, var2 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2 );}
+#define SerialPrintf3(var1, var2, var3) {Serial.printf( var1, var2, var3 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2, var3 );}
+#define SerialPrintf4(var1, var2, var3, var4) {Serial.printf( var1, var2, var3, var4 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2, var3, var4 );}
+#define SerialPrintf5(var1, var2, var3, var4, var5) {Serial.printf( var1, var2, var3, var4, var5 ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var1, var2, var3, var4, var5 );}
 
 // The Serial port for the Zmodem connection
 // must not be the same as DSERIAL unless all
@@ -452,1059 +459,947 @@ int numBLECharacteristics = 0;
 char bleCharacteristicsValues[kMaxCharacteristics][kMessageMax];
 
 void setup() {
-  //If 3.3V rail drops below 3V, system will power down and maintain RTC
-  pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
+    //If 3.3V rail drops below 3V, system will power down and maintain RTC
+    pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
 
-  delay(1); // Let PIN_POWER_LOSS stabilize
+    delay(1); // Let PIN_POWER_LOSS stabilize
 
-  if (digitalRead(PIN_POWER_LOSS) == LOW) powerDownOLA(); //Check PIN_POWER_LOSS just in case we missed the falling edge
-  //attachInterrupt(PIN_POWER_LOSS, powerDownOLA, FALLING); // We can't do this with v2.1.0 as attachInterrupt causes a spontaneous interrupt
-  attachInterrupt(PIN_POWER_LOSS, powerLossISR, FALLING);
-  powerLossSeen = false; // Make sure the flag is clear
+    if (digitalRead(PIN_POWER_LOSS) == LOW) powerDownOLA(); //Check PIN_POWER_LOSS just in case we missed the falling edge
+    //attachInterrupt(PIN_POWER_LOSS, powerDownOLA, FALLING); // We can't do this with v2.1.0 as attachInterrupt causes a spontaneous interrupt
+    attachInterrupt(PIN_POWER_LOSS, powerLossISR, FALLING);
+    powerLossSeen = false; // Make sure the flag is clear
 
-  powerLEDOn(); // Turn the power LED on - if the hardware supports it
+    powerLEDOn(); // Turn the power LED on - if the hardware supports it
 
-  pinMode(PIN_STAT_LED, OUTPUT);
-  digitalWrite(PIN_STAT_LED, HIGH); // Turn the STAT LED on while we configure everything
+    pinMode(PIN_STAT_LED, OUTPUT);
+    digitalWrite(PIN_STAT_LED, HIGH); // Turn the STAT LED on while we configure everything
 
-  SPI.begin(); //Needed if SD is disabled
+    SPI.begin(); //Needed if SD is disabled
 
-  //Do not start Serial1 before productionTest() otherwise the pin configuration gets overwritten
-  //and subsequent Serial1.begin's don't restore the pins to UART mode...
+    //Do not start Serial1 before productionTest() otherwise the pin configuration gets overwritten
+    //and subsequent Serial1.begin's don't restore the pins to UART mode...
 
-  productionTest(); //Check if we need to go into production test mode
+    productionTest(); //Check if we need to go into production test mode
 
-  //We need to manually restore the Serial1 TX and RX pins after they were changed by productionTest()
-  configureSerial1TxRx();
+    //We need to manually restore the Serial1 TX and RX pins after they were changed by productionTest()
+    configureSerial1TxRx();
 
-  Serial.begin(115200); //Default for initial debug messages if necessary
-  Serial1.begin(115200); //Default for initial debug messages if necessary
+    Serial.begin(115200); //Default for initial debug messages if necessary
+    Serial1.begin(115200); //Default for initial debug messages if necessary
 
-  //pinMode(PIN_LOGIC_DEBUG, OUTPUT); // Debug pin to assist tracking down slippery mux bugs
-  //digitalWrite(PIN_LOGIC_DEBUG, HIGH);
+    //pinMode(PIN_LOGIC_DEBUG, OUTPUT); // Debug pin to assist tracking down slippery mux bugs
+    //digitalWrite(PIN_LOGIC_DEBUG, HIGH);
 
-  // Use the worst case power on delay for the Qwiic bus for now as we don't yet know what sensors are connected
-  // (worstCaseQwiicPowerOnDelay is defined in settings.h)
-  qwiicPowerOnDelayMillis = worstCaseQwiicPowerOnDelay;
+    // Use the worst case power on delay for the Qwiic bus for now as we don't yet know what sensors are connected
+    // (worstCaseQwiicPowerOnDelay is defined in settings.h)
+    qwiicPowerOnDelayMillis = worstCaseQwiicPowerOnDelay;
 
-  EEPROM.init();
+    EEPROM.init();
 
-  beginQwiic(); // Turn the qwiic power on as early as possible
+    beginQwiic(); // Turn the qwiic power on as early as possible
 
-  beginSD(); //285 - 293ms
+    beginSD(); //285 - 293ms
 
-  enableCIPOpullUp(); // Enable CIPO pull-up _after_ beginSD
+    enableCIPOpullUp(); // Enable CIPO pull-up _after_ beginSD
 
-  loadSettings(); //50 - 250ms
+    loadSettings(); //50 - 250ms
 
-  if (settings.useTxRxPinsForTerminal == true)
-  {
-    Serial1.flush(); //Complete any previous prints at the previous baud rate
-    Serial1.begin(settings.serialTerminalBaudRate); // Restart the serial port
-  }
-  else
-  {
-    Serial1.flush(); //Complete any previous prints
-    Serial1.end(); // Stop the SerialLog port
-  }
-
-  Serial.flush(); //Complete any previous prints
-  Serial.begin(settings.serialTerminalBaudRate);
-
-  SerialPrintf3("Artemis OpenLog v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-
-  if (settings.useGPIO32ForStopLogging == true)
-  {
-    SerialPrintln(F("Stop Logging is enabled. Pull GPIO pin 32 to GND to stop logging."));
-    pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
-    delay(1); // Let the pin stabilize
-    attachInterrupt(PIN_STOP_LOGGING, stopLoggingISR, FALLING); // Enable the interrupt
-    am_hal_gpio_pincfg_t intPinConfig = g_AM_HAL_GPIO_INPUT_PULLUP;
-    intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_HI2LO;
-    pin_config(PinName(PIN_STOP_LOGGING), intPinConfig); // Make sure the pull-up does actually stay enabled
-    stopLoggingSeen = false; // Make sure the flag is clear
-  }
-
-  if (settings.useGPIO11ForTrigger == true)
-  {
-    pinMode(PIN_TRIGGER, INPUT_PULLUP);
-    delay(1); // Let the pin stabilize
-    am_hal_gpio_pincfg_t intPinConfig = g_AM_HAL_GPIO_INPUT_PULLUP;
-    if (settings.fallingEdgeTrigger == true)
-    {
-      SerialPrintln(F("Falling-edge triggering is enabled. Sensor data will be logged on a falling edge on GPIO pin 11."));
-      attachInterrupt(PIN_TRIGGER, triggerPinISR, FALLING); // Enable the interrupt
-      intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_HI2LO;
+    if (settings.useTxRxPinsForTerminal == true) {
+        Serial1.flush(); //Complete any previous prints at the previous baud rate
+        Serial1.begin(settings.serialTerminalBaudRate); // Restart the serial port
+    } else {
+        Serial1.flush(); //Complete any previous prints
+        Serial1.end(); // Stop the SerialLog port
     }
+
+    Serial.flush(); //Complete any previous prints
+    Serial.begin(settings.serialTerminalBaudRate);
+
+    SerialPrintf3("Artemis OpenLog v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
+    if (settings.useGPIO32ForStopLogging == true) {
+        SerialPrintln(F("Stop Logging is enabled. Pull GPIO pin 32 to GND to stop logging."));
+        pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
+        delay(1); // Let the pin stabilize
+        attachInterrupt(PIN_STOP_LOGGING, stopLoggingISR, FALLING); // Enable the interrupt
+        am_hal_gpio_pincfg_t intPinConfig = g_AM_HAL_GPIO_INPUT_PULLUP;
+        intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_HI2LO;
+        pin_config(PinName(PIN_STOP_LOGGING), intPinConfig); // Make sure the pull-up does actually stay enabled
+        stopLoggingSeen = false; // Make sure the flag is clear
+    }
+
+    if (settings.useGPIO11ForTrigger == true) {
+        pinMode(PIN_TRIGGER, INPUT_PULLUP);
+        delay(1); // Let the pin stabilize
+        am_hal_gpio_pincfg_t intPinConfig = g_AM_HAL_GPIO_INPUT_PULLUP;
+        if (settings.fallingEdgeTrigger == true) {
+            SerialPrintln(F("Falling-edge triggering is enabled. Sensor data will be logged on a falling edge on GPIO pin 11."));
+            attachInterrupt(PIN_TRIGGER, triggerPinISR, FALLING); // Enable the interrupt
+            intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_HI2LO;
+        } else {
+            SerialPrintln(F("Rising-edge triggering is enabled. Sensor data will be logged on a rising edge on GPIO pin 11."));
+            attachInterrupt(PIN_TRIGGER, triggerPinISR, RISING); // Enable the interrupt
+            intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_LO2HI;
+        }
+        pin_config(PinName(PIN_TRIGGER), intPinConfig); // Make sure the pull-up does actually stay enabled
+        triggerEdgeSeen = false; // Make sure the flag is clear
+    }
+
+    analogReadResolution(14); //Increase from default of 10
+
+    if (settings.useBLE) {
+        for (int i = 0; i < kMaxCharacteristics; i++)
+            bleCharacteristicsValues[i][0] = 0; //Clear the BLE characteristics values
+    }
+
+    beginDataLogging(); //180ms
+    lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
+
+    serialTimestamp[0] = '\0'; // Empty the serial timestamp buffer
+
+    if (settings.useTxRxPinsForTerminal == false) {
+        beginSerialLogging(); //20 - 99ms
+        beginSerialOutput(); // Begin serial data output on the TX pin
+    }
+
+    beginIMU(); //61ms
+
+    if (online.microSD == true) SerialPrintln(F("SD card online"));
+    else SerialPrintln(F("SD card offline"));
+
+    if (online.dataLogging == true) SerialPrintln(F("Data logging online"));
+    else SerialPrintln(F("Datalogging offline"));
+
+    if (online.serialLogging == true) SerialPrintln(F("Serial logging online"));
+    else SerialPrintln(F("Serial logging offline"));
+
+    if (online.IMU == true) SerialPrintln(F("IMU online"));
+    else SerialPrintln(F("IMU offline"));
+
+    if (settings.logMaxRate == true) SerialPrintln(F("Logging analog pins at max data rate"));
+
+    if (settings.enableTerminalOutput == false && settings.logData == true) SerialPrintln(F("Logging to microSD card with no terminal output"));
+
+    if (detectQwiicDevices() == true) //159 - 865ms but varies based on number of devices attached
+    {
+        beginQwiicDevices(); //Begin() each device in the node list
+        loadDeviceSettingsFromFile(); //Load config settings into node list
+        configureQwiicDevices(); //Apply config settings to each device in the node list
+        int deviceCount = printOnlineDevice(); // Pretty-print the online devices
+
+        if ((deviceCount == 0) && (settings.resetOnZeroDeviceCount == true)) // Check for resetOnZeroDeviceCount
+        {
+            if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
+                menuMain(); //Present user menu - in case the user wants to disable resetOnZeroDeviceCount
+            else {
+                SerialPrintln(F("*** Zero Qwiic Devices Found! Resetting... ***"));
+                SerialFlush();
+                resetArtemis(); //Thank you and goodnight...
+            }
+        }
+    } else
+        SerialPrintln(F("No Qwiic devices detected"));
+
+    if (settings.showHelperText == true)
+        printHelperText(true, true); //printHelperText to terminal and file
     else
-    {
-      SerialPrintln(F("Rising-edge triggering is enabled. Sensor data will be logged on a rising edge on GPIO pin 11."));
-      attachInterrupt(PIN_TRIGGER, triggerPinISR, RISING); // Enable the interrupt
-      intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_LO2HI;
+        printHelperText(false, false); //call printHelperText to generate the number of characteristics
+
+    if (settings.useBLE) {
+        SerialPrintln(F("Starting BLE..."));
+
+        if (!BLE.begin()) {
+            SerialPrintln(F("BLE.begin failed!"));
+        } else {
+            BLE.setLocalName(kTargetServiceName);
+            BLE.setDeviceName(kTargetServiceName);
+            BLE.setAdvertisedService(bleService); //Add the service UUID
+
+            printDebug("Adding " + (String) numBLECharacteristics + " BLE Characteristics\r\n");
+            for (int i = 0; i < numBLECharacteristics; i++) //Add the characteristics
+            {
+                if (i == 0) bleService.addCharacteristic(bleCharacteristic00);
+                if (i == 1) bleService.addCharacteristic(bleCharacteristic01);
+                if (i == 2) bleService.addCharacteristic(bleCharacteristic02);
+                if (i == 3) bleService.addCharacteristic(bleCharacteristic03);
+                if (i == 4) bleService.addCharacteristic(bleCharacteristic04);
+                if (i == 5) bleService.addCharacteristic(bleCharacteristic05);
+                if (i == 6) bleService.addCharacteristic(bleCharacteristic06);
+                if (i == 7) bleService.addCharacteristic(bleCharacteristic07);
+                if (i == 8) bleService.addCharacteristic(bleCharacteristic08);
+                if (i == 9) bleService.addCharacteristic(bleCharacteristic09);
+                if (i == 10) bleService.addCharacteristic(bleCharacteristic10);
+                if (i == 11) bleService.addCharacteristic(bleCharacteristic11);
+                if (i == 12) bleService.addCharacteristic(bleCharacteristic12);
+                if (i == 13) bleService.addCharacteristic(bleCharacteristic13);
+                if (i == 14) bleService.addCharacteristic(bleCharacteristic14);
+                if (i == 15) bleService.addCharacteristic(bleCharacteristic15);
+                if (i == 16) bleService.addCharacteristic(bleCharacteristic16);
+                if (i == 17) bleService.addCharacteristic(bleCharacteristic17);
+                if (i == 18) bleService.addCharacteristic(bleCharacteristic18);
+                if (i == 19) bleService.addCharacteristic(bleCharacteristic19);
+                if (i == 20) bleService.addCharacteristic(bleCharacteristic20);
+                if (i == 21) bleService.addCharacteristic(bleCharacteristic21);
+                if (i == 22) bleService.addCharacteristic(bleCharacteristic22);
+                if (i == 23) bleService.addCharacteristic(bleCharacteristic23);
+                if (i == 24) bleService.addCharacteristic(bleCharacteristic24);
+                if (i == 25) bleService.addCharacteristic(bleCharacteristic25);
+                if (i == 26) bleService.addCharacteristic(bleCharacteristic26);
+                if (i == 27) bleService.addCharacteristic(bleCharacteristic27);
+                if (i == 28) bleService.addCharacteristic(bleCharacteristic28);
+                if (i == 29) bleService.addCharacteristic(bleCharacteristic29);
+                if (i == 30) bleService.addCharacteristic(bleCharacteristic30);
+                if (i == 31) bleService.addCharacteristic(bleCharacteristic31);
+                if (i == 32) bleService.addCharacteristic(bleCharacteristic32);
+                if (i == 33) bleService.addCharacteristic(bleCharacteristic33);
+                if (i == 34) bleService.addCharacteristic(bleCharacteristic34);
+                if (i == 35) bleService.addCharacteristic(bleCharacteristic35);
+                if (i == 36) bleService.addCharacteristic(bleCharacteristic36);
+                if (i == 37) bleService.addCharacteristic(bleCharacteristic37);
+                if (i == 38) bleService.addCharacteristic(bleCharacteristic38);
+                if (i == 39) bleService.addCharacteristic(bleCharacteristic39);
+                if (i == 40) bleService.addCharacteristic(bleCharacteristic40);
+                if (i == 41) bleService.addCharacteristic(bleCharacteristic41);
+                if (i == 42) bleService.addCharacteristic(bleCharacteristic42);
+                if (i == 43) bleService.addCharacteristic(bleCharacteristic43);
+                if (i == 44) bleService.addCharacteristic(bleCharacteristic44);
+                if (i == 45) bleService.addCharacteristic(bleCharacteristic45);
+                if (i == 46) bleService.addCharacteristic(bleCharacteristic46);
+                if (i == 47) bleService.addCharacteristic(bleCharacteristic47);
+                if (i == 48) bleService.addCharacteristic(bleCharacteristic48);
+                if (i == 49) bleService.addCharacteristic(bleCharacteristic49);
+            }
+
+            BLE.addService(bleService); //Add the service
+
+            for (int i = 0; i < numBLECharacteristics; i++) //Set the initial values to "NULL"
+            {
+                if (i == 0) bleCharacteristic00.setValue("NULL");
+                if (i == 1) bleCharacteristic01.setValue("NULL");
+                if (i == 2) bleCharacteristic02.setValue("NULL");
+                if (i == 3) bleCharacteristic03.setValue("NULL");
+                if (i == 4) bleCharacteristic04.setValue("NULL");
+                if (i == 5) bleCharacteristic05.setValue("NULL");
+                if (i == 6) bleCharacteristic06.setValue("NULL");
+                if (i == 7) bleCharacteristic07.setValue("NULL");
+                if (i == 8) bleCharacteristic08.setValue("NULL");
+                if (i == 9) bleCharacteristic09.setValue("NULL");
+                if (i == 10) bleCharacteristic10.setValue("NULL");
+                if (i == 11) bleCharacteristic11.setValue("NULL");
+                if (i == 12) bleCharacteristic12.setValue("NULL");
+                if (i == 13) bleCharacteristic13.setValue("NULL");
+                if (i == 14) bleCharacteristic14.setValue("NULL");
+                if (i == 15) bleCharacteristic15.setValue("NULL");
+                if (i == 16) bleCharacteristic16.setValue("NULL");
+                if (i == 17) bleCharacteristic17.setValue("NULL");
+                if (i == 18) bleCharacteristic18.setValue("NULL");
+                if (i == 19) bleCharacteristic19.setValue("NULL");
+                if (i == 20) bleCharacteristic20.setValue("NULL");
+                if (i == 21) bleCharacteristic21.setValue("NULL");
+                if (i == 22) bleCharacteristic22.setValue("NULL");
+                if (i == 23) bleCharacteristic23.setValue("NULL");
+                if (i == 24) bleCharacteristic24.setValue("NULL");
+                if (i == 25) bleCharacteristic25.setValue("NULL");
+                if (i == 26) bleCharacteristic26.setValue("NULL");
+                if (i == 27) bleCharacteristic27.setValue("NULL");
+                if (i == 28) bleCharacteristic28.setValue("NULL");
+                if (i == 29) bleCharacteristic29.setValue("NULL");
+                if (i == 30) bleCharacteristic30.setValue("NULL");
+                if (i == 31) bleCharacteristic31.setValue("NULL");
+                if (i == 32) bleCharacteristic32.setValue("NULL");
+                if (i == 33) bleCharacteristic33.setValue("NULL");
+                if (i == 34) bleCharacteristic34.setValue("NULL");
+                if (i == 35) bleCharacteristic35.setValue("NULL");
+                if (i == 36) bleCharacteristic36.setValue("NULL");
+                if (i == 37) bleCharacteristic37.setValue("NULL");
+                if (i == 38) bleCharacteristic38.setValue("NULL");
+                if (i == 39) bleCharacteristic39.setValue("NULL");
+                if (i == 40) bleCharacteristic40.setValue("NULL");
+                if (i == 41) bleCharacteristic41.setValue("NULL");
+                if (i == 42) bleCharacteristic42.setValue("NULL");
+                if (i == 43) bleCharacteristic43.setValue("NULL");
+                if (i == 44) bleCharacteristic44.setValue("NULL");
+                if (i == 45) bleCharacteristic45.setValue("NULL");
+                if (i == 46) bleCharacteristic46.setValue("NULL");
+                if (i == 47) bleCharacteristic47.setValue("NULL");
+                if (i == 48) bleCharacteristic48.setValue("NULL");
+                if (i == 49) bleCharacteristic49.setValue("NULL");
+            }
+            BLE.advertise(); //Start advertising
+            usingBLE = true;
+        }
     }
-    pin_config(PinName(PIN_TRIGGER), intPinConfig); // Make sure the pull-up does actually stay enabled
-    triggerEdgeSeen = false; // Make sure the flag is clear
-  }
 
-  analogReadResolution(14); //Increase from default of 10
+    //If we are sleeping between readings then we cannot rely on millis() as it is powered down
+    //Use RTC instead
+    measurementStartTime = bestMillis();
 
-  if (settings.useBLE)
-  {
-    for (int i = 0; i < kMaxCharacteristics; i++)
-      bleCharacteristicsValues[i][0] = 0; //Clear the BLE characteristics values
-  }
+    digitalWrite(PIN_STAT_LED, LOW); // Turn the STAT LED off now that everything is configured
 
-  beginDataLogging(); //180ms
-  lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
+    lastAwakeTimeMillis = rtcMillis();
 
-  serialTimestamp[0] = '\0'; // Empty the serial timestamp buffer
-
-  if (settings.useTxRxPinsForTerminal == false)
-  {
-    beginSerialLogging(); //20 - 99ms
-    beginSerialOutput(); // Begin serial data output on the TX pin
-  }
-
-  beginIMU(); //61ms
-
-  if (online.microSD == true) SerialPrintln(F("SD card online"));
-  else SerialPrintln(F("SD card offline"));
-
-  if (online.dataLogging == true) SerialPrintln(F("Data logging online"));
-  else SerialPrintln(F("Datalogging offline"));
-
-  if (online.serialLogging == true) SerialPrintln(F("Serial logging online"));
-  else SerialPrintln(F("Serial logging offline"));
-
-  if (online.IMU == true) SerialPrintln(F("IMU online"));
-  else SerialPrintln(F("IMU offline"));
-
-  if (settings.logMaxRate == true) SerialPrintln(F("Logging analog pins at max data rate"));
-
-  if (settings.enableTerminalOutput == false && settings.logData == true) SerialPrintln(F("Logging to microSD card with no terminal output"));
-
-  if (detectQwiicDevices() == true) //159 - 865ms but varies based on number of devices attached
-  {
-    beginQwiicDevices(); //Begin() each device in the node list
-    loadDeviceSettingsFromFile(); //Load config settings into node list
-    configureQwiicDevices(); //Apply config settings to each device in the node list
-    int deviceCount = printOnlineDevice(); // Pretty-print the online devices
-
-    if ((deviceCount == 0) && (settings.resetOnZeroDeviceCount == true)) // Check for resetOnZeroDeviceCount
-    {
-      if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
-        menuMain(); //Present user menu - in case the user wants to disable resetOnZeroDeviceCount
-      else
-      {
-        SerialPrintln(F("*** Zero Qwiic Devices Found! Resetting... ***"));
-        SerialFlush();
-        resetArtemis(); //Thank you and goodnight...
-      }
-    }
-  }
-  else
-    SerialPrintln(F("No Qwiic devices detected"));
-
-  if (settings.showHelperText == true)
-    printHelperText(true, true); //printHelperText to terminal and file
-  else
-    printHelperText(false, false); //call printHelperText to generate the number of characteristics
-
-  if (settings.useBLE)
-  {
-    SerialPrintln(F("Starting BLE..."));
-
-    if (!BLE.begin())
-    {
-      SerialPrintln(F("BLE.begin failed!"));
-    }
-    else
-    {
-      BLE.setLocalName(kTargetServiceName);
-      BLE.setDeviceName(kTargetServiceName);
-      BLE.setAdvertisedService(bleService); //Add the service UUID
-      
-      printDebug("Adding " + (String)numBLECharacteristics + " BLE Characteristics\r\n");
-      for (int i = 0; i < numBLECharacteristics; i++) //Add the characteristics
-      {
-        if (i == 0) bleService.addCharacteristic(bleCharacteristic00);
-        if (i == 1) bleService.addCharacteristic(bleCharacteristic01);
-        if (i == 2) bleService.addCharacteristic(bleCharacteristic02);
-        if (i == 3) bleService.addCharacteristic(bleCharacteristic03);
-        if (i == 4) bleService.addCharacteristic(bleCharacteristic04);
-        if (i == 5) bleService.addCharacteristic(bleCharacteristic05);
-        if (i == 6) bleService.addCharacteristic(bleCharacteristic06);
-        if (i == 7) bleService.addCharacteristic(bleCharacteristic07);
-        if (i == 8) bleService.addCharacteristic(bleCharacteristic08);
-        if (i == 9) bleService.addCharacteristic(bleCharacteristic09);
-        if (i == 10) bleService.addCharacteristic(bleCharacteristic10);
-        if (i == 11) bleService.addCharacteristic(bleCharacteristic11);
-        if (i == 12) bleService.addCharacteristic(bleCharacteristic12);
-        if (i == 13) bleService.addCharacteristic(bleCharacteristic13);
-        if (i == 14) bleService.addCharacteristic(bleCharacteristic14);
-        if (i == 15) bleService.addCharacteristic(bleCharacteristic15);
-        if (i == 16) bleService.addCharacteristic(bleCharacteristic16);
-        if (i == 17) bleService.addCharacteristic(bleCharacteristic17);
-        if (i == 18) bleService.addCharacteristic(bleCharacteristic18);
-        if (i == 19) bleService.addCharacteristic(bleCharacteristic19);
-        if (i == 20) bleService.addCharacteristic(bleCharacteristic20);
-        if (i == 21) bleService.addCharacteristic(bleCharacteristic21);
-        if (i == 22) bleService.addCharacteristic(bleCharacteristic22);
-        if (i == 23) bleService.addCharacteristic(bleCharacteristic23);
-        if (i == 24) bleService.addCharacteristic(bleCharacteristic24);
-        if (i == 25) bleService.addCharacteristic(bleCharacteristic25);
-        if (i == 26) bleService.addCharacteristic(bleCharacteristic26);
-        if (i == 27) bleService.addCharacteristic(bleCharacteristic27);
-        if (i == 28) bleService.addCharacteristic(bleCharacteristic28);
-        if (i == 29) bleService.addCharacteristic(bleCharacteristic29);
-        if (i == 30) bleService.addCharacteristic(bleCharacteristic30);
-        if (i == 31) bleService.addCharacteristic(bleCharacteristic31);
-        if (i == 32) bleService.addCharacteristic(bleCharacteristic32);
-        if (i == 33) bleService.addCharacteristic(bleCharacteristic33);
-        if (i == 34) bleService.addCharacteristic(bleCharacteristic34);
-        if (i == 35) bleService.addCharacteristic(bleCharacteristic35);
-        if (i == 36) bleService.addCharacteristic(bleCharacteristic36);
-        if (i == 37) bleService.addCharacteristic(bleCharacteristic37);
-        if (i == 38) bleService.addCharacteristic(bleCharacteristic38);
-        if (i == 39) bleService.addCharacteristic(bleCharacteristic39);
-        if (i == 40) bleService.addCharacteristic(bleCharacteristic40);
-        if (i == 41) bleService.addCharacteristic(bleCharacteristic41);
-        if (i == 42) bleService.addCharacteristic(bleCharacteristic42);
-        if (i == 43) bleService.addCharacteristic(bleCharacteristic43);
-        if (i == 44) bleService.addCharacteristic(bleCharacteristic44);
-        if (i == 45) bleService.addCharacteristic(bleCharacteristic45);
-        if (i == 46) bleService.addCharacteristic(bleCharacteristic46);
-        if (i == 47) bleService.addCharacteristic(bleCharacteristic47);
-        if (i == 48) bleService.addCharacteristic(bleCharacteristic48);
-        if (i == 49) bleService.addCharacteristic(bleCharacteristic49);
-      }
-      
-      BLE.addService(bleService); //Add the service
-      
-      for (int i = 0; i < numBLECharacteristics; i++) //Set the initial values to "NULL"
-      {
-        if (i == 0) bleCharacteristic00.setValue("NULL");
-        if (i == 1) bleCharacteristic01.setValue("NULL");
-        if (i == 2) bleCharacteristic02.setValue("NULL");
-        if (i == 3) bleCharacteristic03.setValue("NULL");
-        if (i == 4) bleCharacteristic04.setValue("NULL");
-        if (i == 5) bleCharacteristic05.setValue("NULL");
-        if (i == 6) bleCharacteristic06.setValue("NULL");
-        if (i == 7) bleCharacteristic07.setValue("NULL");
-        if (i == 8) bleCharacteristic08.setValue("NULL");
-        if (i == 9) bleCharacteristic09.setValue("NULL");
-        if (i == 10) bleCharacteristic10.setValue("NULL");
-        if (i == 11) bleCharacteristic11.setValue("NULL");
-        if (i == 12) bleCharacteristic12.setValue("NULL");
-        if (i == 13) bleCharacteristic13.setValue("NULL");
-        if (i == 14) bleCharacteristic14.setValue("NULL");
-        if (i == 15) bleCharacteristic15.setValue("NULL");
-        if (i == 16) bleCharacteristic16.setValue("NULL");
-        if (i == 17) bleCharacteristic17.setValue("NULL");
-        if (i == 18) bleCharacteristic18.setValue("NULL");
-        if (i == 19) bleCharacteristic19.setValue("NULL");
-        if (i == 20) bleCharacteristic20.setValue("NULL");
-        if (i == 21) bleCharacteristic21.setValue("NULL");
-        if (i == 22) bleCharacteristic22.setValue("NULL");
-        if (i == 23) bleCharacteristic23.setValue("NULL");
-        if (i == 24) bleCharacteristic24.setValue("NULL");
-        if (i == 25) bleCharacteristic25.setValue("NULL");
-        if (i == 26) bleCharacteristic26.setValue("NULL");
-        if (i == 27) bleCharacteristic27.setValue("NULL");
-        if (i == 28) bleCharacteristic28.setValue("NULL");
-        if (i == 29) bleCharacteristic29.setValue("NULL");
-        if (i == 30) bleCharacteristic30.setValue("NULL");
-        if (i == 31) bleCharacteristic31.setValue("NULL");
-        if (i == 32) bleCharacteristic32.setValue("NULL");
-        if (i == 33) bleCharacteristic33.setValue("NULL");
-        if (i == 34) bleCharacteristic34.setValue("NULL");
-        if (i == 35) bleCharacteristic35.setValue("NULL");
-        if (i == 36) bleCharacteristic36.setValue("NULL");
-        if (i == 37) bleCharacteristic37.setValue("NULL");
-        if (i == 38) bleCharacteristic38.setValue("NULL");
-        if (i == 39) bleCharacteristic39.setValue("NULL");
-        if (i == 40) bleCharacteristic40.setValue("NULL");
-        if (i == 41) bleCharacteristic41.setValue("NULL");
-        if (i == 42) bleCharacteristic42.setValue("NULL");
-        if (i == 43) bleCharacteristic43.setValue("NULL");
-        if (i == 44) bleCharacteristic44.setValue("NULL");
-        if (i == 45) bleCharacteristic45.setValue("NULL");
-        if (i == 46) bleCharacteristic46.setValue("NULL");
-        if (i == 47) bleCharacteristic47.setValue("NULL");
-        if (i == 48) bleCharacteristic48.setValue("NULL");
-        if (i == 49) bleCharacteristic49.setValue("NULL");
-      }
-      BLE.advertise(); //Start advertising
-      usingBLE = true;
-    }
-  }
-
-  //If we are sleeping between readings then we cannot rely on millis() as it is powered down
-  //Use RTC instead
-  measurementStartTime = bestMillis();
-
-  digitalWrite(PIN_STAT_LED, LOW); // Turn the STAT LED off now that everything is configured
-
-  lastAwakeTimeMillis = rtcMillis();
-
-  //If we are immediately going to go to sleep after the first reading then
-  //first present the user with the config menu in case they need to change something
-  if (checkIfItIsTimeToSleep())
-    menuMain();
+    //If we are immediately going to go to sleep after the first reading then
+    //first present the user with the config menu in case they need to change something
+    if (checkIfItIsTimeToSleep())
+        menuMain();
 }
 
 void loop() {
 
-  checkBattery(); // Check for low battery
+    checkBattery(); // Check for low battery
 
-  if (usingBLE)
-    BLEDevice central = BLE.central();
+    if (usingBLE)
+        BLEDevice central = BLE.central();
 
-  if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
-    menuMain(); //Present user menu
+    if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
+        menuMain(); //Present user menu
 
-  if (settings.logSerial == true && online.serialLogging == true && settings.useTxRxPinsForTerminal == false)
-  {
-    size_t timestampCharsLeftToWrite = strlen(serialTimestamp);
-    //SerialPrintf2("timestampCharsLeftToWrite is %d\r\n", timestampCharsLeftToWrite);
-    //SerialFlush();
+    if (settings.logSerial == true && online.serialLogging == true && settings.useTxRxPinsForTerminal == false) {
+        size_t timestampCharsLeftToWrite = strlen(serialTimestamp);
+        //SerialPrintf2("timestampCharsLeftToWrite is %d\r\n", timestampCharsLeftToWrite);
+        //SerialFlush();
 
-    if (Serial1.available() || (timestampCharsLeftToWrite > 0))
-    {
-      while (Serial1.available() || (timestampCharsLeftToWrite > 0))
-      {
-        if (timestampCharsLeftToWrite > 0) // Based on code written by @DennisMelamed in PR #70
-        {
-          incomingBuffer[incomingBufferSpot++] = serialTimestamp[0]; // Add a timestamp character to incomingBuffer
+        if (Serial1.available() || (timestampCharsLeftToWrite > 0)) {
+            while (Serial1.available() || (timestampCharsLeftToWrite > 0)) {
+                if (timestampCharsLeftToWrite > 0) // Based on code written by @DennisMelamed in PR #70
+                {
+                    incomingBuffer[incomingBufferSpot++] = serialTimestamp[0]; // Add a timestamp character to incomingBuffer
 
-          for (size_t i = 0; i < timestampCharsLeftToWrite; i++)
-          {
-            serialTimestamp[i] = serialTimestamp[i+1]; // Shuffle the remaining chars along by one
-          }
+                    for (size_t i = 0; i < timestampCharsLeftToWrite; i++) {
+                        serialTimestamp[i] = serialTimestamp[i + 1]; // Shuffle the remaining chars along by one
+                    }
 
-          timestampCharsLeftToWrite -= 1;
+                    timestampCharsLeftToWrite -= 1;
+                } else {
+                    incomingBuffer[incomingBufferSpot++] = Serial1.read();
+
+                    //Get the RTC timestamp if we just received the timestamp token
+                    if (settings.timestampSerial && (incomingBuffer[incomingBufferSpot - 1] == settings.timeStampToken)) {
+                        getTimeString(&serialTimestamp[2]);
+                        serialTimestamp[0] = 0x0A; // Add Line Feed at the start of the timestamp
+                        serialTimestamp[1] = '^'; // Add an up-arrow to indicate the timestamp relates to the preceeding data
+                        serialTimestamp[strlen(serialTimestamp) - 1] = 0x0A; // Change the final comma of the timestamp to a Line Feed
+                    }
+                }
+
+                if (incomingBufferSpot == sizeof(incomingBuffer)) {
+                    digitalWrite(PIN_STAT_LED, HIGH); //Toggle stat LED to indicating log recording
+                    serialDataFile.write(incomingBuffer, sizeof(incomingBuffer)); //Record the buffer to the card
+                    digitalWrite(PIN_STAT_LED, LOW);
+                    incomingBufferSpot = 0;
+                }
+                charsReceived++;
+                checkBattery();
+            }
+
+            //If we are sleeping between readings then we cannot rely on millis() as it is powered down
+            //Use RTC instead
+            lastSeriaLogSyncTime = bestMillis(); //Reset the last sync time to now
+            newSerialData = true;
+        } else if (newSerialData == true) {
+            if ((bestMillis() - lastSeriaLogSyncTime) > MAX_IDLE_TIME_MSEC) //If we haven't received any characters recently then sync log file
+            {
+                if (incomingBufferSpot > 0) {
+                    //Write the remainder of the buffer
+                    digitalWrite(PIN_STAT_LED, HIGH); //Toggle stat LED to indicating log recording
+                    serialDataFile.write(incomingBuffer, incomingBufferSpot); //Record the buffer to the card
+                    serialDataFile.sync();
+                    if (settings.frequentFileAccessTimestamps == true)
+                        updateDataFileAccess(&serialDataFile); // Update the file access time & date
+                    digitalWrite(PIN_STAT_LED, LOW);
+
+                    incomingBufferSpot = 0;
+                }
+
+                newSerialData = false;
+                lastSeriaLogSyncTime = bestMillis(); //Reset the last sync time to now
+                printDebug("Total chars received: " + (String) charsReceived + "\r\n");
+            }
         }
-        else
-        {
-          incomingBuffer[incomingBufferSpot++] = Serial1.read();
+    }
 
-          //Get the RTC timestamp if we just received the timestamp token
-          if (settings.timestampSerial && (incomingBuffer[incomingBufferSpot-1] == settings.timeStampToken))
-          {
-            getTimeString(&serialTimestamp[2]);
-            serialTimestamp[0] = 0x0A; // Add Line Feed at the start of the timestamp
-            serialTimestamp[1] = '^'; // Add an up-arrow to indicate the timestamp relates to the preceeding data
-            serialTimestamp[strlen(serialTimestamp) - 1] = 0x0A; // Change the final comma of the timestamp to a Line Feed
-          }
+    //In v2.1 of the core micros() becomes corrupted during deep sleep so only test if we are not sleeping
+    if (settings.usBetweenReadings < maxUsBeforeSleep) {
+        if ((micros() - lastReadTime) >= settings.usBetweenReadings)
+            takeReading = true;
+    }
+
+    //Check for a trigger event
+    if (settings.useGPIO11ForTrigger == true) {
+        if (triggerEdgeSeen == true) {
+            takeReading = true; // If triggering is enabled and a trigger event has been seen, then take a reading.
+        } else {
+            takeReading = false; // If triggering is enabled and a trigger even has not been seen, then make sure we don't take a reading based on settings.usBetweenReadings.
         }
-
-        if (incomingBufferSpot == sizeof(incomingBuffer))
-        {
-          digitalWrite(PIN_STAT_LED, HIGH); //Toggle stat LED to indicating log recording
-          serialDataFile.write(incomingBuffer, sizeof(incomingBuffer)); //Record the buffer to the card
-          digitalWrite(PIN_STAT_LED, LOW);
-          incomingBufferSpot = 0;
-        }
-        charsReceived++;
-        checkBattery();
-      }
-
-      //If we are sleeping between readings then we cannot rely on millis() as it is powered down
-      //Use RTC instead
-      lastSeriaLogSyncTime = bestMillis(); //Reset the last sync time to now
-      newSerialData = true;
     }
-    else if (newSerialData == true)
-    {
-      if ((bestMillis() - lastSeriaLogSyncTime) > MAX_IDLE_TIME_MSEC) //If we haven't received any characters recently then sync log file
-      {
-        if (incomingBufferSpot > 0)
-        {
-          //Write the remainder of the buffer
-          digitalWrite(PIN_STAT_LED, HIGH); //Toggle stat LED to indicating log recording
-          serialDataFile.write(incomingBuffer, incomingBufferSpot); //Record the buffer to the card
-          serialDataFile.sync();
-          if (settings.frequentFileAccessTimestamps == true)
-            updateDataFileAccess(&serialDataFile); // Update the file access time & date
-          digitalWrite(PIN_STAT_LED, LOW);
 
-          incomingBufferSpot = 0;
-        }
-
-        newSerialData = false;
-        lastSeriaLogSyncTime = bestMillis(); //Reset the last sync time to now
-        printDebug("Total chars received: " + (String)charsReceived + "\r\n");
-      }
-    }
-  }
-
-  //In v2.1 of the core micros() becomes corrupted during deep sleep so only test if we are not sleeping
-  if (settings.usBetweenReadings < maxUsBeforeSleep)
-  {
-    if ((micros() - lastReadTime) >= settings.usBetweenReadings)
-      takeReading = true;
-  }
-
-  //Check for a trigger event
-  if (settings.useGPIO11ForTrigger == true)
-  {
-    if (triggerEdgeSeen == true)
-    {
-      takeReading = true; // If triggering is enabled and a trigger event has been seen, then take a reading.
-    }
-    else
-    {
-      takeReading = false; // If triggering is enabled and a trigger even has not been seen, then make sure we don't take a reading based on settings.usBetweenReadings.
-    }
-  }
-
-  //Is it time to get new data?
-  if ((settings.logMaxRate == true) || (takeReading == true))
-  {
-    takeReading = false;
-    lastReadTime = micros();
+    //Is it time to get new data?
+    if ((settings.logMaxRate == true) || (takeReading == true)) {
+        takeReading = false;
+        lastReadTime = micros();
 
 #ifdef PRINT_LAST_WRITE_TIME
-    if (settings.printDebugMessages)
-    {
-      // Print how long it has been since the last write
-      char tempTimeRev[20]; // Char array to hold to usBR (reversed order)
-      char tempTime[20]; // Char array to hold to usBR (correct order)
-      static uint64_t lastWriteTime; //Used to calculate the time since the last SD write (sleep-proof)
-      unsigned long usBR = rtcMillis() - lastWriteTime;
-      unsigned int i = 0;
-      if (usBR == 0ULL) // if usBetweenReadings is zero, set tempTime to "0"
-      {
-        tempTime[0] = '0';
-        tempTime[1] = 0;
-      }
-      else
-      {
-        while (usBR > 0)
+        if (settings.printDebugMessages)
         {
-          tempTimeRev[i++] = (usBR % 10) + '0'; // divide by 10, convert the remainder to char
-          usBR /= 10; // divide by 10
-        }
-        unsigned int j = 0;
-        while (i > 0)
-        {
-          tempTime[j++] = tempTimeRev[--i]; // reverse the order
-          tempTime[j] = 0; // mark the end with a NULL
-        }
-      }
+          // Print how long it has been since the last write
+          char tempTimeRev[20]; // Char array to hold to usBR (reversed order)
+          char tempTime[20]; // Char array to hold to usBR (correct order)
+          static uint64_t lastWriteTime; //Used to calculate the time since the last SD write (sleep-proof)
+          unsigned long usBR = rtcMillis() - lastWriteTime;
+          unsigned int i = 0;
+          if (usBR == 0ULL) // if usBetweenReadings is zero, set tempTime to "0"
+          {
+            tempTime[0] = '0';
+            tempTime[1] = 0;
+          }
+          else
+          {
+            while (usBR > 0)
+            {
+              tempTimeRev[i++] = (usBR % 10) + '0'; // divide by 10, convert the remainder to char
+              usBR /= 10; // divide by 10
+            }
+            unsigned int j = 0;
+            while (i > 0)
+            {
+              tempTime[j++] = tempTimeRev[--i]; // reverse the order
+              tempTime[j] = 0; // mark the end with a NULL
+            }
+          }
 
-      //printDebug("ms since last write: " + (String)tempTime + "\r\n");
-      printDebug((String)tempTime + "\r\n");
+          //printDebug("ms since last write: " + (String)tempTime + "\r\n");
+          printDebug((String)tempTime + "\r\n");
 
-      lastWriteTime = rtcMillis();
-    }
+          lastWriteTime = rtcMillis();
+        }
 #endif
 
-    getData(); //Query all enabled sensors for data
+        getData(); //Query all enabled sensors for data
 
-    //Print to terminal
-    if (settings.enableTerminalOutput == true)
-      SerialPrint(outputData); //Print to terminal
+        //Print to terminal
+        if (settings.enableTerminalOutput == true)
+            SerialPrint(outputData); //Print to terminal
 
-    //Output to TX pin
-    if ((settings.outputSerial == true) && (online.serialOutput == true))
-      Serial1.print(outputData); //Print to TX pin
+        //Output to TX pin
+        if ((settings.outputSerial == true) && (online.serialOutput == true))
+            Serial1.print(outputData); //Print to TX pin
 
-    //Record to SD
-    if (settings.logData == true)
-    {
-      if (settings.enableSD && online.microSD)
-      {
-        digitalWrite(PIN_STAT_LED, HIGH);
-        uint32_t recordLength = sensorDataFile.write(outputData, strlen(outputData));
-        if (recordLength != strlen(outputData)) //Record the buffer to the card
-        {
-          if (settings.printDebugMessages == true)
-          {
-            SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
-          }
+        //Record to SD
+        if (settings.logData == true) {
+            if (settings.enableSD && online.microSD) {
+                digitalWrite(PIN_STAT_LED, HIGH);
+                uint32_t recordLength = sensorDataFile.write(outputData, strlen(outputData));
+                if (recordLength != strlen(outputData)) //Record the buffer to the card
+                {
+                    if (settings.printDebugMessages == true) {
+                        SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
+                    }
+                }
+
+                //Force sync every 500ms
+                if (bestMillis() - lastDataLogSyncTime > 500) {
+                    lastDataLogSyncTime = bestMillis();
+                    sensorDataFile.sync();
+                    if (settings.frequentFileAccessTimestamps == true)
+                        updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+                }
+
+                //Check if it is time to open a new log file
+                uint64_t secsSinceLastFileNameChange = rtcMillis() - lastSDFileNameChangeTime; // Calculate how long we have been logging for
+                secsSinceLastFileNameChange /= 1000ULL; // Convert to secs
+                if ((settings.openNewLogFilesAfter > 0) && (((unsigned long) secsSinceLastFileNameChange) >= settings.openNewLogFilesAfter)) {
+                    //Close existings files
+                    if (online.dataLogging == true) {
+                        sensorDataFile.sync();
+                        updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+                        sensorDataFile.close();
+                        strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
+                        beginDataLogging(); //180ms
+                        if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
+                    }
+                    if (online.serialLogging == true) {
+                        serialDataFile.sync();
+                        updateDataFileAccess(&serialDataFile); // Update the file access time & date
+                        serialDataFile.close();
+                        strcpy(serialDataFileName, findNextAvailableLog(settings.nextSerialLogNumber, "serialLog"));
+                        beginSerialLogging();
+                    }
+
+                    lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
+                }
+
+                digitalWrite(PIN_STAT_LED, LOW);
+            }
         }
 
-        //Force sync every 500ms
-        if (bestMillis() - lastDataLogSyncTime > 500)
+        if ((settings.useGPIO32ForStopLogging == true) && (stopLoggingSeen == true)) // Has the user pressed the stop logging button?
         {
-          lastDataLogSyncTime = bestMillis();
-          sensorDataFile.sync();
-          if (settings.frequentFileAccessTimestamps == true)
-            updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+            stopLogging();
         }
 
-        //Check if it is time to open a new log file
-        uint64_t secsSinceLastFileNameChange = rtcMillis() - lastSDFileNameChangeTime; // Calculate how long we have been logging for
-        secsSinceLastFileNameChange /= 1000ULL; // Convert to secs
-        if ((settings.openNewLogFilesAfter > 0) && (((unsigned long)secsSinceLastFileNameChange) >= settings.openNewLogFilesAfter))
-        {
-          //Close existings files
-          if (online.dataLogging == true)
-          {
-            sensorDataFile.sync();
-            updateDataFileAccess(&sensorDataFile); // Update the file access time & date
-            sensorDataFile.close();
-            strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
-            beginDataLogging(); //180ms
-            if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
-          }
-          if (online.serialLogging == true)
-          {
-            serialDataFile.sync();
-            updateDataFileAccess(&serialDataFile); // Update the file access time & date
-            serialDataFile.close();
-            strcpy(serialDataFileName, findNextAvailableLog(settings.nextSerialLogNumber, "serialLog"));
-            beginSerialLogging();
-          }
+        triggerEdgeSeen = false; // Clear the trigger seen flag here - just in case another trigger was received while we were logging data to SD card
 
-          lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
+        // Code changes here are based on suggestions by @ryanneve in Issue #46, PR #64 and Issue #83
+        if (checkIfItIsTimeToSleep()) {
+            sleepAfterRead = true;
+        }
+    }
+
+    if (sleepAfterRead == true) {
+        // Check if we should stay awake because settings.minimumAwakeTimeMillis is non-zero
+        if ((settings.usBetweenReadings >= maxUsBeforeSleep) && (settings.minimumAwakeTimeMillis > 0)) {
+            // Check if we have been awake long enough (millis is reset to zero when waking from sleep)
+            // goToSleep will automatically compensate for how long we have been awake
+            if ((bestMillis() - lastAwakeTimeMillis) < settings.minimumAwakeTimeMillis)
+                return; // Too early to sleep - leave sleepAfterRead set true
         }
 
-        digitalWrite(PIN_STAT_LED, LOW);
-      }
+        sleepAfterRead = false;
+        goToSleep(howLongToSleepFor());
     }
-
-    if ((settings.useGPIO32ForStopLogging == true) && (stopLoggingSeen == true)) // Has the user pressed the stop logging button?
-    {
-      stopLogging();
-    }
-
-    triggerEdgeSeen = false; // Clear the trigger seen flag here - just in case another trigger was received while we were logging data to SD card
-
-    // Code changes here are based on suggestions by @ryanneve in Issue #46, PR #64 and Issue #83
-    if (checkIfItIsTimeToSleep())
-    {
-      sleepAfterRead = true;
-    }
-  }
-
-  if (sleepAfterRead == true)
-  {
-    // Check if we should stay awake because settings.minimumAwakeTimeMillis is non-zero
-    if ((settings.usBetweenReadings >= maxUsBeforeSleep) && (settings.minimumAwakeTimeMillis > 0))
-    {
-      // Check if we have been awake long enough (millis is reset to zero when waking from sleep)
-      // goToSleep will automatically compensate for how long we have been awake
-      if ((bestMillis() - lastAwakeTimeMillis) < settings.minimumAwakeTimeMillis)
-        return; // Too early to sleep - leave sleepAfterRead set true
-    }
-
-    sleepAfterRead = false;
-    goToSleep(howLongToSleepFor());
-  }
 }
 
-uint32_t howLongToSleepFor(void)
-{
-  //Counter/Timer 6 will use the 32kHz clock
-  //Calculate how many 32768Hz system ticks we need to sleep for:
-  //sysTicksToSleep = msToSleep * 32768L / 1000
-  //We need to be careful with the multiply as we will overflow uint32_t if msToSleep is > 131072
+uint32_t howLongToSleepFor(void) {
+    //Counter/Timer 6 will use the 32kHz clock
+    //Calculate how many 32768Hz system ticks we need to sleep for:
+    //sysTicksToSleep = msToSleep * 32768L / 1000
+    //We need to be careful with the multiply as we will overflow uint32_t if msToSleep is > 131072
 
-  //goToSleep will automatically compensate for how long we have been awake
+    //goToSleep will automatically compensate for how long we have been awake
 
-  uint32_t msToSleep;
+    uint32_t msToSleep;
 
-  if (checkSleepOnFastSlowPin())
-    msToSleep = (uint32_t)(settings.slowLoggingIntervalSeconds * 1000UL);
-  else if (checkSleepOnRTCTime())
-  {
-    // checkSleepOnRTCTime has returned true, so we know that we are between slowLoggingStartMOD and slowLoggingStopMOD
-    // We need to check how long it is until slowLoggingStopMOD (accounting for midnight!) and adjust the sleep duration
-    // if slowLoggingStopMOD occurs before slowLoggingIntervalSeconds
+    if (checkSleepOnFastSlowPin())
+        msToSleep = (uint32_t) (settings.slowLoggingIntervalSeconds * 1000UL);
+    else if (checkSleepOnRTCTime()) {
+        // checkSleepOnRTCTime has returned true, so we know that we are between slowLoggingStartMOD and slowLoggingStopMOD
+        // We need to check how long it is until slowLoggingStopMOD (accounting for midnight!) and adjust the sleep duration
+        // if slowLoggingStopMOD occurs before slowLoggingIntervalSeconds
 
-    msToSleep = (uint32_t)(settings.slowLoggingIntervalSeconds * 1000UL); // Default to this
+        msToSleep = (uint32_t) (settings.slowLoggingIntervalSeconds * 1000UL); // Default to this
 
-    myRTC.getTime(); // Get the RTC time
-    long secondsOfDay = (myRTC.hour * 60 * 60) + (myRTC.minute * 60) + myRTC.seconds;
+        myRTC.getTime(); // Get the RTC time
+        long secondsOfDay = (myRTC.hour * 60 * 60) + (myRTC.minute * 60) + myRTC.seconds;
 
-    long slowLoggingStopSOD = settings.slowLoggingStopMOD * 60; // Convert slowLoggingStop to seconds-of-day
+        long slowLoggingStopSOD = settings.slowLoggingStopMOD * 60; // Convert slowLoggingStop to seconds-of-day
 
-    long secondsUntilStop = slowLoggingStopSOD - secondsOfDay; // Calculate how long it is until slowLoggingStop
+        long secondsUntilStop = slowLoggingStopSOD - secondsOfDay; // Calculate how long it is until slowLoggingStop
 
-    // If secondsUntilStop is negative then we know that now is before midnight and slowLoggingStop is after midnight
-    if (secondsUntilStop < 0) secondsUntilStop += 24 * 60 * 60; // Add a day's worth of seconds if required to make secondsUntilStop positive
+        // If secondsUntilStop is negative then we know that now is before midnight and slowLoggingStop is after midnight
+        if (secondsUntilStop < 0) secondsUntilStop += 24 * 60 * 60; // Add a day's worth of seconds if required to make secondsUntilStop positive
 
-    if (secondsUntilStop < settings.slowLoggingIntervalSeconds) // If we need to sleep for less than slowLoggingIntervalSeconds
-      msToSleep = (secondsUntilStop + 1) * 1000UL; // Adjust msToSleep, adding one extra second to make sure the next wake is > slowLoggingStop
-  }
-  else // checkSleepOnUsBetweenReadings
-  {
-    msToSleep = (uint32_t)(settings.usBetweenReadings / 1000ULL); // Sleep for usBetweenReadings
-  }
+        if (secondsUntilStop < settings.slowLoggingIntervalSeconds) // If we need to sleep for less than slowLoggingIntervalSeconds
+            msToSleep = (secondsUntilStop + 1) * 1000UL; // Adjust msToSleep, adding one extra second to make sure the next wake is > slowLoggingStop
+    } else // checkSleepOnUsBetweenReadings
+    {
+        msToSleep = (uint32_t) (settings.usBetweenReadings / 1000ULL); // Sleep for usBetweenReadings
+    }
 
-  uint32_t sysTicksToSleep;
-  if (msToSleep < 131000)
-  {
-    sysTicksToSleep = msToSleep * 32768L; // Do the multiply first for short intervals
-    sysTicksToSleep = sysTicksToSleep / 1000L; // Now do the divide
-  }
-  else
-  {
-    sysTicksToSleep = msToSleep / 1000L; // Do the division first for long intervals (to avoid an overflow)
-    sysTicksToSleep = sysTicksToSleep * 32768L; // Now do the multiply
-  }
+    uint32_t sysTicksToSleep;
+    if (msToSleep < 131000) {
+        sysTicksToSleep = msToSleep * 32768L; // Do the multiply first for short intervals
+        sysTicksToSleep = sysTicksToSleep / 1000L; // Now do the divide
+    } else {
+        sysTicksToSleep = msToSleep / 1000L; // Do the division first for long intervals (to avoid an overflow)
+        sysTicksToSleep = sysTicksToSleep * 32768L; // Now do the multiply
+    }
 
-  return (sysTicksToSleep);
+    return (sysTicksToSleep);
 }
 
-bool checkIfItIsTimeToSleep(void)
-{
+bool checkIfItIsTimeToSleep(void) {
 
-  if (checkSleepOnUsBetweenReadings()
-  || checkSleepOnRTCTime()
-  || checkSleepOnFastSlowPin())
-    return(true);
-  else
-    return(false);
+    if (checkSleepOnUsBetweenReadings()
+        || checkSleepOnRTCTime()
+        || checkSleepOnFastSlowPin())
+        return (true);
+    else
+        return (false);
 }
 
 //Go to sleep if the time between readings is greater than maxUsBeforeSleep (2 seconds) and triggering is not enabled
-bool checkSleepOnUsBetweenReadings(void)
-{
-  if ((settings.useGPIO11ForTrigger == false) && (settings.usBetweenReadings >= maxUsBeforeSleep))
-    return (true);
-  else
-    return (false);
+bool checkSleepOnUsBetweenReadings(void) {
+    if ((settings.useGPIO11ForTrigger == false) && (settings.usBetweenReadings >= maxUsBeforeSleep))
+        return (true);
+    else
+        return (false);
 }
 
 //Go to sleep if Fast/Slow logging on Pin 11 is enabled and Pin 11 is in the correct state
-bool checkSleepOnFastSlowPin(void)
-{
-  if ((settings.useGPIO11ForFastSlowLogging == true) && (digitalRead(PIN_TRIGGER) == settings.slowLoggingWhenPin11Is))
-    return (true);
-  else
-    return (false);
+bool checkSleepOnFastSlowPin(void) {
+    if ((settings.useGPIO11ForFastSlowLogging == true) && (digitalRead(PIN_TRIGGER) == settings.slowLoggingWhenPin11Is))
+        return (true);
+    else
+        return (false);
 }
 
 // Go to sleep if useRTCForFastSlowLogging is enabled and RTC time is between the start and stop times
-bool checkSleepOnRTCTime(void)
-{
-  // Check if we should be sleeping based on useGPIO11ForFastSlowLogging and slowLoggingStartMOD + slowLoggingStopMOD
-  bool sleepOnRTCTime = false;
-  if (settings.useRTCForFastSlowLogging == true)
-  {
-    if (settings.slowLoggingStartMOD != settings.slowLoggingStopMOD) // Only perform the check if the start and stop times are not equal
-    {
-      myRTC.getTime(); // Get the RTC time
-      int minutesOfDay = (myRTC.hour * 60) + myRTC.minute;
+bool checkSleepOnRTCTime(void) {
+    // Check if we should be sleeping based on useGPIO11ForFastSlowLogging and slowLoggingStartMOD + slowLoggingStopMOD
+    bool sleepOnRTCTime = false;
+    if (settings.useRTCForFastSlowLogging == true) {
+        if (settings.slowLoggingStartMOD != settings.slowLoggingStopMOD) // Only perform the check if the start and stop times are not equal
+        {
+            myRTC.getTime(); // Get the RTC time
+            int minutesOfDay = (myRTC.hour * 60) + myRTC.minute;
 
-      if (settings.slowLoggingStartMOD > settings.slowLoggingStopMOD) // If slow logging starts later than the stop time (i.e. slow over midnight)
-      {
-        if ((minutesOfDay >= settings.slowLoggingStartMOD) || (minutesOfDay < settings.slowLoggingStopMOD))
-          sleepOnRTCTime = true;
-      }
-      else // Slow logging starts earlier than the stop time
-      {
-        if ((minutesOfDay >= settings.slowLoggingStartMOD) && (minutesOfDay < settings.slowLoggingStopMOD))
-          sleepOnRTCTime = true;
-      }
+            if (settings.slowLoggingStartMOD > settings.slowLoggingStopMOD) // If slow logging starts later than the stop time (i.e. slow over midnight)
+            {
+                if ((minutesOfDay >= settings.slowLoggingStartMOD) || (minutesOfDay < settings.slowLoggingStopMOD))
+                    sleepOnRTCTime = true;
+            } else // Slow logging starts earlier than the stop time
+            {
+                if ((minutesOfDay >= settings.slowLoggingStartMOD) && (minutesOfDay < settings.slowLoggingStopMOD))
+                    sleepOnRTCTime = true;
+            }
+        }
     }
-  }
-  return(sleepOnRTCTime);
+    return (sleepOnRTCTime);
 }
 
-void beginQwiic()
-{
-  pinMode(PIN_QWIIC_POWER, OUTPUT);
-  pin_config(PinName(PIN_QWIIC_POWER), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
-  qwiicPowerOn();
-  qwiic.begin();
-  setQwiicPullups(settings.qwiicBusPullUps); //Just to make it really clear what pull-ups are being used, set pullups here.
+void beginQwiic() {
+    pinMode(PIN_QWIIC_POWER, OUTPUT);
+    pin_config(PinName(PIN_QWIIC_POWER), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
+    qwiicPowerOn();
+    qwiic.begin();
+    setQwiicPullups(settings.qwiicBusPullUps); //Just to make it really clear what pull-ups are being used, set pullups here.
 }
 
-void setQwiicPullups(uint32_t qwiicBusPullUps)
-{
-  //Change SCL and SDA pull-ups manually using pin_config
-  am_hal_gpio_pincfg_t sclPinCfg = g_AM_BSP_GPIO_IOM1_SCL;
-  am_hal_gpio_pincfg_t sdaPinCfg = g_AM_BSP_GPIO_IOM1_SDA;
+void setQwiicPullups(uint32_t qwiicBusPullUps) {
+    //Change SCL and SDA pull-ups manually using pin_config
+    am_hal_gpio_pincfg_t sclPinCfg = g_AM_BSP_GPIO_IOM1_SCL;
+    am_hal_gpio_pincfg_t sdaPinCfg = g_AM_BSP_GPIO_IOM1_SDA;
 
-  if (qwiicBusPullUps == 0)
-  {
-    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE; // No pull-ups
-    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
-  }
-  else if (qwiicBusPullUps == 1)
-  {
-    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K; // Use 1K5 pull-ups
-    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
-  }
-  else if (qwiicBusPullUps == 6)
-  {
-    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K; // Use 6K pull-ups
-    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K;
-  }
-  else if (qwiicBusPullUps == 12)
-  {
-    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K; // Use 12K pull-ups
-    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K;
-  }
-  else
-  {
-    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_24K; // Use 24K pull-ups
-    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_24K;
-  }
-
-  pin_config(PinName(PIN_QWIIC_SCL), sclPinCfg);
-  pin_config(PinName(PIN_QWIIC_SDA), sdaPinCfg);
-}
-
-void beginSD()
-{
-  pinMode(PIN_MICROSD_POWER, OUTPUT);
-  pin_config(PinName(PIN_MICROSD_POWER), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
-  pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
-  pin_config(PinName(PIN_MICROSD_CHIP_SELECT), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
-  digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
-
-  if (settings.enableSD == true)
-  {
-    // For reasons I don't understand, we seem to have to wait for at least 1ms after SPI.begin before we call microSDPowerOn.
-    // If you comment the next line, the Artemis resets at microSDPowerOn when beginSD is called from wakeFromSleep...
-    // But only on one of my V10 red boards. The second one I have doesn't seem to need the delay!?
-    delay(5);
-
-    microSDPowerOn();
-
-    //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
-    //Max current is 200mA average across 1s, peak 300mA
-    for (int i = 0; i < 10; i++) //Wait
-    {
-      checkBattery();
-      delay(1);
+    if (qwiicBusPullUps == 0) {
+        sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE; // No pull-ups
+        sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+    } else if (qwiicBusPullUps == 1) {
+        sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K; // Use 1K5 pull-ups
+        sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
+    } else if (qwiicBusPullUps == 6) {
+        sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K; // Use 6K pull-ups
+        sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K;
+    } else if (qwiicBusPullUps == 12) {
+        sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K; // Use 12K pull-ups
+        sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K;
+    } else {
+        sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_24K; // Use 24K pull-ups
+        sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_24K;
     }
 
-    if (sd.begin(SD_CONFIG) == false) // Try to begin the SD card using the correct chip select
-    {
-      printDebug(F("SD init failed (first attempt). Trying again...\r\n"));
-      for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
-      {
-        checkBattery();
-        delay(1);
-      }
-      if (sd.begin(SD_CONFIG) == false) // Try to begin the SD card using the correct chip select
-      {
-        SerialPrintln(F("SD init failed (second attempt). Is card present? Formatted?"));
-        SerialPrintln(F("Please ensure the SD card is formatted correctly using https://www.sdcard.org/downloads/formatter/"));
-        digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+    pin_config(PinName(PIN_QWIIC_SCL), sclPinCfg);
+    pin_config(PinName(PIN_QWIIC_SDA), sdaPinCfg);
+}
+
+void beginSD() {
+    pinMode(PIN_MICROSD_POWER, OUTPUT);
+    pin_config(PinName(PIN_MICROSD_POWER), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
+    pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
+    pin_config(PinName(PIN_MICROSD_CHIP_SELECT), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
+    digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+
+    if (settings.enableSD == true) {
+        // For reasons I don't understand, we seem to have to wait for at least 1ms after SPI.begin before we call microSDPowerOn.
+        // If you comment the next line, the Artemis resets at microSDPowerOn when beginSD is called from wakeFromSleep...
+        // But only on one of my V10 red boards. The second one I have doesn't seem to need the delay!?
+        delay(5);
+
+        microSDPowerOn();
+
+        //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+        //Max current is 200mA average across 1s, peak 300mA
+        for (int i = 0; i < 10; i++) //Wait
+        {
+            checkBattery();
+            delay(1);
+        }
+
+        if (sd.begin(SD_CONFIG) == false) // Try to begin the SD card using the correct chip select
+        {
+            printDebug(F("SD init failed (first attempt). Trying again...\r\n"));
+            for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
+            {
+                checkBattery();
+                delay(1);
+            }
+            if (sd.begin(SD_CONFIG) == false) // Try to begin the SD card using the correct chip select
+            {
+                SerialPrintln(F("SD init failed (second attempt). Is card present? Formatted?"));
+                SerialPrintln(F("Please ensure the SD card is formatted correctly using https://www.sdcard.org/downloads/formatter/"));
+                digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+                online.microSD = false;
+                return;
+            }
+        }
+
+        //Change to root directory. All new file creation will be in root.
+        if (sd.chdir() == false) {
+            SerialPrintln(F("SD change directory failed"));
+            online.microSD = false;
+            return;
+        }
+
+        online.microSD = true;
+    } else {
+        microSDPowerOff();
         online.microSD = false;
-        return;
-      }
     }
-
-    //Change to root directory. All new file creation will be in root.
-    if (sd.chdir() == false)
-    {
-      SerialPrintln(F("SD change directory failed"));
-      online.microSD = false;
-      return;
-    }
-
-    online.microSD = true;
-  }
-  else
-  {
-    microSDPowerOff();
-    online.microSD = false;
-  }
 }
 
 void enableCIPOpullUp() // updated for v2.1.0 of the Apollo3 core
 {
-  //Add 1K5 pull-up on CIPO
-  am_hal_gpio_pincfg_t cipoPinCfg = g_AM_BSP_GPIO_IOM0_MISO;
-  cipoPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
-  pin_config(PinName(PIN_SPI_CIPO), cipoPinCfg);
+    //Add 1K5 pull-up on CIPO
+    am_hal_gpio_pincfg_t cipoPinCfg = g_AM_BSP_GPIO_IOM0_MISO;
+    cipoPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
+    pin_config(PinName(PIN_SPI_CIPO), cipoPinCfg);
 }
 
 void disableCIPOpullUp() // updated for v2.1.0 of the Apollo3 core
 {
-  am_hal_gpio_pincfg_t cipoPinCfg = g_AM_BSP_GPIO_IOM0_MISO;
-  pin_config(PinName(PIN_SPI_CIPO), cipoPinCfg);
+    am_hal_gpio_pincfg_t cipoPinCfg = g_AM_BSP_GPIO_IOM0_MISO;
+    pin_config(PinName(PIN_SPI_CIPO), cipoPinCfg);
 }
 
 void configureSerial1TxRx(void) // Configure pins 12 and 13 for UART1 TX and RX
 {
-  am_hal_gpio_pincfg_t pinConfigTx = g_AM_BSP_GPIO_COM_UART_TX;
-  pinConfigTx.uFuncSel = AM_HAL_PIN_12_UART1TX;
-  pin_config(PinName(BREAKOUT_PIN_TX), pinConfigTx);
-  am_hal_gpio_pincfg_t pinConfigRx = g_AM_BSP_GPIO_COM_UART_RX;
-  pinConfigRx.uFuncSel = AM_HAL_PIN_13_UART1RX;
-  pinConfigRx.ePullup = AM_HAL_GPIO_PIN_PULLUP_WEAK; // Put a weak pull-up on the Rx pin
-  pin_config(PinName(BREAKOUT_PIN_RX), pinConfigRx);
+    am_hal_gpio_pincfg_t pinConfigTx = g_AM_BSP_GPIO_COM_UART_TX;
+    pinConfigTx.uFuncSel = AM_HAL_PIN_12_UART1TX;
+    pin_config(PinName(BREAKOUT_PIN_TX), pinConfigTx);
+    am_hal_gpio_pincfg_t pinConfigRx = g_AM_BSP_GPIO_COM_UART_RX;
+    pinConfigRx.uFuncSel = AM_HAL_PIN_13_UART1RX;
+    pinConfigRx.ePullup = AM_HAL_GPIO_PIN_PULLUP_WEAK; // Put a weak pull-up on the Rx pin
+    pin_config(PinName(BREAKOUT_PIN_RX), pinConfigRx);
 }
 
-void beginIMU()
-{
-  pinMode(PIN_IMU_POWER, OUTPUT);
-  pin_config(PinName(PIN_IMU_POWER), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
-  pinMode(PIN_IMU_CHIP_SELECT, OUTPUT);
-  pin_config(PinName(PIN_IMU_CHIP_SELECT), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
-  digitalWrite(PIN_IMU_CHIP_SELECT, HIGH); //Be sure IMU is deselected
+void beginIMU() {
+    pinMode(PIN_IMU_POWER, OUTPUT);
+    pin_config(PinName(PIN_IMU_POWER), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
+    pinMode(PIN_IMU_CHIP_SELECT, OUTPUT);
+    pin_config(PinName(PIN_IMU_CHIP_SELECT), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
+    digitalWrite(PIN_IMU_CHIP_SELECT, HIGH); //Be sure IMU is deselected
 
-  if (settings.enableIMU == true && settings.logMaxRate == false)
-  {
-    //Reset ICM by power cycling it
-    imuPowerOff();
-    for (int i = 0; i < 10; i++) //10 is fine
-    {
-      checkBattery();
-      delay(1);
-    }
-    imuPowerOn();
-    for (int i = 0; i < 25; i++) //Allow ICM to come online. Typical is 11ms. Max is 100ms. https://cdn.sparkfun.com/assets/7/f/e/c/d/DS-000189-ICM-20948-v1.3.pdf
-    {
-      checkBattery();
-      delay(1);
-    }
+    if (settings.enableIMU == true && settings.logMaxRate == false) {
+        //Reset ICM by power cycling it
+        imuPowerOff();
+        for (int i = 0; i < 10; i++) //10 is fine
+        {
+            checkBattery();
+            delay(1);
+        }
+        imuPowerOn();
+        for (int i = 0; i < 25; i++) //Allow ICM to come online. Typical is 11ms. Max is 100ms. https://cdn.sparkfun.com/assets/7/f/e/c/d/DS-000189-ICM-20948-v1.3.pdf
+        {
+            checkBattery();
+            delay(1);
+        }
 
-    if (settings.printDebugMessages) myICM.enableDebugging();
-    myICM.begin(PIN_IMU_CHIP_SELECT, SPI, 4000000); //Set IMU SPI rate to 4MHz
-    if (myICM.status != ICM_20948_Stat_Ok)
-    {
-      printDebug("beginIMU: first attempt at myICM.begin failed. myICM.status = " + (String)myICM.status + "\r\n");
-      //Try one more time with longer wait
+        if (settings.printDebugMessages) myICM.enableDebugging();
+        myICM.begin(PIN_IMU_CHIP_SELECT, SPI, 4000000); //Set IMU SPI rate to 4MHz
+        if (myICM.status != ICM_20948_Stat_Ok) {
+            printDebug("beginIMU: first attempt at myICM.begin failed. myICM.status = " + (String) myICM.status + "\r\n");
+            //Try one more time with longer wait
 
-      //Reset ICM by power cycling it
-      imuPowerOff();
-      for (int i = 0; i < 10; i++) //10 is fine
-      {
-        checkBattery();
-        delay(1);
-      }
-      imuPowerOn();
-      for (int i = 0; i < 100; i++) //Allow ICM to come online. Typical is 11ms. Max is 100ms.
-      {
-        checkBattery();
-        delay(1);
-      }
+            //Reset ICM by power cycling it
+            imuPowerOff();
+            for (int i = 0; i < 10; i++) //10 is fine
+            {
+                checkBattery();
+                delay(1);
+            }
+            imuPowerOn();
+            for (int i = 0; i < 100; i++) //Allow ICM to come online. Typical is 11ms. Max is 100ms.
+            {
+                checkBattery();
+                delay(1);
+            }
 
-      myICM.begin(PIN_IMU_CHIP_SELECT, SPI, 4000000); //Set IMU SPI rate to 4MHz
-      if (myICM.status != ICM_20948_Stat_Ok)
-      {
-        printDebug("beginIMU: second attempt at myICM.begin failed. myICM.status = " + (String)myICM.status + "\r\n");
-        digitalWrite(PIN_IMU_CHIP_SELECT, HIGH); //Be sure IMU is deselected
-        SerialPrintln(F("ICM-20948 failed to init."));
+            myICM.begin(PIN_IMU_CHIP_SELECT, SPI, 4000000); //Set IMU SPI rate to 4MHz
+            if (myICM.status != ICM_20948_Stat_Ok) {
+                printDebug("beginIMU: second attempt at myICM.begin failed. myICM.status = " + (String) myICM.status + "\r\n");
+                digitalWrite(PIN_IMU_CHIP_SELECT, HIGH); //Be sure IMU is deselected
+                SerialPrintln(F("ICM-20948 failed to init."));
+                imuPowerOff();
+                online.IMU = false;
+                return;
+            }
+        }
+
+        //Give the IMU extra time to get its act together. This seems to fix the IMU-not-starting-up-cleanly-after-sleep problem...
+        //Seems to need a full 25ms. 10ms is not enough.
+        for (int i = 0; i < 25; i++) //Allow ICM to come online.
+        {
+            checkBattery();
+            delay(1);
+        }
+
+        bool success = true;
+
+        //Check if we are using the DMP
+        if (settings.imuUseDMP == false) {
+            //Perform a full startup (not minimal) for non-DMP mode
+            ICM_20948_Status_e retval = myICM.startupDefault(false);
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not startup the IMU in non-DMP mode!"));
+                success = false;
+            }
+            //Update the full scale and DLPF settings
+            retval = myICM.enableDLPF(ICM_20948_Internal_Acc, settings.imuAccDLPF);
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not configure the IMU Accelerometer DLPF!"));
+                success = false;
+            }
+            retval = myICM.enableDLPF(ICM_20948_Internal_Gyr, settings.imuGyroDLPF);
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not configure the IMU Gyro DLPF!"));
+                success = false;
+            }
+            ICM_20948_dlpcfg_t dlpcfg;
+            dlpcfg.a = settings.imuAccDLPFBW;
+            dlpcfg.g = settings.imuGyroDLPFBW;
+            retval = myICM.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), dlpcfg);
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not configure the IMU DLPF BW!"));
+                success = false;
+            }
+            ICM_20948_fss_t FSS;
+            FSS.a = settings.imuAccFSS;
+            FSS.g = settings.imuGyroFSS;
+            retval = myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), FSS);
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not configure the IMU Full Scale!"));
+                success = false;
+            }
+        } else {
+            // Initialize the DMP
+            ICM_20948_Status_e retval = myICM.initializeDMP();
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not startup the IMU in DMP mode!"));
+                success = false;
+            }
+            if (settings.imuLogDMPQuat6) {
+                retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR);
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not enable the Game Rotation Vector (Quat6)!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Quat6, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Quat6 ODR!"));
+                    success = false;
+                }
+            }
+            if (settings.imuLogDMPQuat9) {
+                retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_ROTATION_VECTOR);
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not enable the Rotation Vector (Quat9)!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Quat9 ODR!"));
+                    success = false;
+                }
+            }
+            if (settings.imuLogDMPAccel) {
+                retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER);
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not enable the DMP Accelerometer!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Accel ODR!"));
+                    success = false;
+                }
+            }
+            if (settings.imuLogDMPGyro) {
+                retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE);
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not enable the DMP Gyroscope!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Gyro ODR!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Gyro Calibr ODR!"));
+                    success = false;
+                }
+            }
+            if (settings.imuLogDMPCpass) {
+                retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED);
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not enable the DMP Compass!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Compass ODR!"));
+                    success = false;
+                }
+                retval = myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 0); // Set ODR to 55Hz
+                if (retval != ICM_20948_Stat_Ok) {
+                    SerialPrintln(F("Error: Could not set the Compass Calibr ODR!"));
+                    success = false;
+                }
+            }
+            retval = myICM.enableFIFO(); // Enable the FIFO
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not enable the FIFO!"));
+                success = false;
+            }
+            retval = myICM.enableDMP(); // Enable the DMP
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not enable the DMP!"));
+                success = false;
+            }
+            retval = myICM.resetDMP(); // Reset the DMP
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not reset the DMP!"));
+                success = false;
+            }
+            retval = myICM.resetFIFO(); // Reset the FIFO
+            if (retval != ICM_20948_Stat_Ok) {
+                SerialPrintln(F("Error: Could not reset the FIFO!"));
+                success = false;
+            }
+        }
+
+        if (success) {
+            online.IMU = true;
+            delay(50); // Give the IMU time to get its first measurement ready
+        } else {
+            //Power down IMU
+            imuPowerOff();
+            online.IMU = false;
+        }
+    } else {
+        //Power down IMU
         imuPowerOff();
         online.IMU = false;
-        return;
-      }
     }
-
-    //Give the IMU extra time to get its act together. This seems to fix the IMU-not-starting-up-cleanly-after-sleep problem...
-    //Seems to need a full 25ms. 10ms is not enough.
-    for (int i = 0; i < 25; i++) //Allow ICM to come online.
-    {
-      checkBattery();
-      delay(1);
-    }
-
-    bool success = true;
-
-    //Check if we are using the DMP
-    if (settings.imuUseDMP == false)
-    {
-      //Perform a full startup (not minimal) for non-DMP mode
-      ICM_20948_Status_e retval = myICM.startupDefault(false);
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not startup the IMU in non-DMP mode!"));
-        success = false;
-      }
-      //Update the full scale and DLPF settings
-      retval = myICM.enableDLPF(ICM_20948_Internal_Acc, settings.imuAccDLPF);
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not configure the IMU Accelerometer DLPF!"));
-        success = false;
-      }
-      retval = myICM.enableDLPF(ICM_20948_Internal_Gyr, settings.imuGyroDLPF);
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not configure the IMU Gyro DLPF!"));
-        success = false;
-      }
-      ICM_20948_dlpcfg_t dlpcfg;
-      dlpcfg.a = settings.imuAccDLPFBW;
-      dlpcfg.g = settings.imuGyroDLPFBW;
-      retval = myICM.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), dlpcfg);
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not configure the IMU DLPF BW!"));
-        success = false;
-      }
-      ICM_20948_fss_t FSS;
-      FSS.a = settings.imuAccFSS;
-      FSS.g = settings.imuGyroFSS;
-      retval = myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), FSS);
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not configure the IMU Full Scale!"));
-        success = false;
-      }
-    }
-    else
-    {
-      // Initialize the DMP
-      ICM_20948_Status_e retval = myICM.initializeDMP();
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not startup the IMU in DMP mode!"));
-        success = false;
-      }
-      if (settings.imuLogDMPQuat6)
-      {
-        retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR);
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not enable the Game Rotation Vector (Quat6)!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Quat6, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Quat6 ODR!"));
-          success = false;
-        }
-      }
-      if (settings.imuLogDMPQuat9)
-      {
-        retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_ROTATION_VECTOR);
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not enable the Rotation Vector (Quat9)!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Quat9, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Quat9 ODR!"));
-          success = false;
-        }
-      }
-      if (settings.imuLogDMPAccel)
-      {
-        retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER);
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not enable the DMP Accelerometer!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Accel ODR!"));
-          success = false;
-        }
-      }
-      if (settings.imuLogDMPGyro)
-      {
-        retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE);
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not enable the DMP Gyroscope!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Gyro ODR!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Gyro Calibr ODR!"));
-          success = false;
-        }
-      }
-      if (settings.imuLogDMPCpass)
-      {
-        retval = myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED);
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not enable the DMP Compass!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Compass ODR!"));
-          success = false;
-        }
-        retval = myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 0); // Set ODR to 55Hz
-        if (retval != ICM_20948_Stat_Ok)
-        {
-          SerialPrintln(F("Error: Could not set the Compass Calibr ODR!"));
-          success = false;
-        }
-      }
-      retval = myICM.enableFIFO(); // Enable the FIFO
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not enable the FIFO!"));
-        success = false;
-      }
-      retval = myICM.enableDMP(); // Enable the DMP
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not enable the DMP!"));
-        success = false;
-      }
-      retval = myICM.resetDMP(); // Reset the DMP
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not reset the DMP!"));
-        success = false;
-      }
-      retval = myICM.resetFIFO(); // Reset the FIFO
-      if (retval != ICM_20948_Stat_Ok)
-      {
-        SerialPrintln(F("Error: Could not reset the FIFO!"));
-        success = false;
-      }
-    }
-
-    if (success)
-    {
-      online.IMU = true;
-      delay(50); // Give the IMU time to get its first measurement ready
-    }
-    else
-    {
-      //Power down IMU
-      imuPowerOff();
-      online.IMU = false;
-    }
-  }
-  else
-  {
-    //Power down IMU
-    imuPowerOff();
-    online.IMU = false;
-  }
 }
 
 
 // initializeDMP is a weak function. Let's overwrite it so we can increase the sample rate
-ICM_20948_Status_e ICM_20948::initializeDMP(void)
-{
+ICM_20948_Status_e ICM_20948::initializeDMP(void) {
     // First, let's check if the DMP is available
-    if (_device._dmp_firmware_available != true)
-    {
+    if (_device._dmp_firmware_available != true) {
         debugPrint(F("ICM_20948::startupDMP: DMP is not available. Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h..."));
         return ICM_20948_Stat_DMPNotSupported;
     }
 
-    ICM_20948_Status_e  worstResult = ICM_20948_Stat_Ok;
+    ICM_20948_Status_e worstResult = ICM_20948_Stat_Ok;
 
 #if defined(ICM_20948_USE_DMP)
 
     // The ICM-20948 is awake and ready but hasn't been configured. Let's step through the configuration
     // sequence from InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
 
-    ICM_20948_Status_e  result = ICM_20948_Stat_Ok; // Use result and worstResult to show if the configuration was successful
+    ICM_20948_Status_e result = ICM_20948_Stat_Ok; // Use result and worstResult to show if the configuration was successful
 //    ICM_20948_Status_e  worstResult = ICM_20948_Stat_Ok;
 
     // Normally, when the DMP is not enabled, startupMagnetometer (called by startupDefault, which is called by begin) configures the AK09916 magnetometer
@@ -1528,7 +1423,8 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     // false: clear the I2C_SLV0_CTRL I2C_SLV0_REG_DIS (we want to write the register value)
     // true: set the I2C_SLV0_CTRL I2C_SLV0_GRP bit to show the register pairing starts at byte 1+2 (copied from inv_icm20948_resume_akm)
     // true: set the I2C_SLV0_CTRL I2C_SLV0_BYTE_SW to byte-swap the data from the mag (copied from inv_icm20948_resume_akm)
-    result = i2cControllerConfigurePeripheral(0, MAG_AK09916_I2C_ADDR, AK09916_REG_RSV2, 10, true, true, false, true, true); if (result > worstResult) worstResult = result;
+    result = i2cControllerConfigurePeripheral(0, MAG_AK09916_I2C_ADDR, AK09916_REG_RSV2, 10, true, true, false, true, true);
+    if (result > worstResult) worstResult = result;
     //
     // We also need to set up I2C_SLV1 to do the Single Measurement triggering:
     // 1: use I2C_SLV1
@@ -1541,7 +1437,8 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     // false: clear the I2C_SLV0_CTRL I2C_SLV0_GRP bit
     // false: clear the I2C_SLV0_CTRL I2C_SLV0_BYTE_SW bit
     // AK09916_mode_single: tell I2C_SLV1 to write the Single Measurement command each sample
-    result = i2cControllerConfigurePeripheral(1, MAG_AK09916_I2C_ADDR, AK09916_REG_CNTL2, 1, false, true, false, false, false, AK09916_mode_single); if (result > worstResult) worstResult = result;
+    result = i2cControllerConfigurePeripheral(1, MAG_AK09916_I2C_ADDR, AK09916_REG_CNTL2, 1, false, true, false, false, false, AK09916_mode_single);
+    if (result > worstResult) worstResult = result;
 
     // Set the I2C Master ODR configuration
     // It is not clear why we need to do this... But it appears to be essential! From the datasheet:
@@ -1551,29 +1448,37 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     //  If gyroscope is disabled, then all sensors (including I2C_MASTER) use the accelerometer ODR."
     // Since both gyro and accel are running, setting this register should have no effect. But it does. Maybe because the Gyro and Accel are placed in Low Power Mode (cycled)?
     // You can see by monitoring the Aux I2C pins that the next three lines reduce the bus traffic (magnetometer reads) from 1125Hz to the chosen rate: 68.75Hz in this case.
-    result = setBank(3); if (result > worstResult) worstResult = result; // Select Bank 3
+    result = setBank(3);
+    if (result > worstResult) worstResult = result; // Select Bank 3
     uint8_t mstODRconfig = 0x04; // Set the ODR configuration to 1100/2^4 = 68.75Hz
-    result = write(AGB3_REG_I2C_MST_ODR_CONFIG, &mstODRconfig, 1); if (result > worstResult) worstResult = result; // Write one byte to the I2C_MST_ODR_CONFIG register
+    result = write(AGB3_REG_I2C_MST_ODR_CONFIG, &mstODRconfig, 1);
+    if (result > worstResult) worstResult = result; // Write one byte to the I2C_MST_ODR_CONFIG register
 
     // Configure clock source through PWR_MGMT_1
     // ICM_20948_Clock_Auto selects the best available clock source – PLL if ready, else use the Internal oscillator
-    result = setClockSource(ICM_20948_Clock_Auto); if (result > worstResult) worstResult = result; // This is shorthand: success will be set to false if setClockSource fails
+    result = setClockSource(ICM_20948_Clock_Auto);
+    if (result > worstResult) worstResult = result; // This is shorthand: success will be set to false if setClockSource fails
 
     // Enable accel and gyro sensors through PWR_MGMT_2
     // Enable Accelerometer (all axes) and Gyroscope (all axes) by writing zero to PWR_MGMT_2
-    result = setBank(0); if (result > worstResult) worstResult = result;                               // Select Bank 0
+    result = setBank(0);
+    if (result > worstResult) worstResult = result;                               // Select Bank 0
     uint8_t pwrMgmt2 = 0x40;                                                          // Set the reserved bit 6 (pressure sensor disable?)
-    result = write(AGB0_REG_PWR_MGMT_2, &pwrMgmt2, 1); if (result > worstResult) worstResult = result; // Write one byte to the PWR_MGMT_2 register
+    result = write(AGB0_REG_PWR_MGMT_2, &pwrMgmt2, 1);
+    if (result > worstResult) worstResult = result; // Write one byte to the PWR_MGMT_2 register
 
     // Place _only_ I2C_Master in Low Power Mode (cycled) via LP_CONFIG
     // The InvenSense Nucleo example initially puts the accel and gyro into low power mode too, but then later updates LP_CONFIG so only the I2C_Master is in Low Power Mode
-    result = setSampleMode(ICM_20948_Internal_Mst, ICM_20948_Sample_Mode_Cycled); if (result > worstResult) worstResult = result;
+    result = setSampleMode(ICM_20948_Internal_Mst, ICM_20948_Sample_Mode_Cycled);
+    if (result > worstResult) worstResult = result;
 
     // Disable the FIFO
-    result = enableFIFO(false); if (result > worstResult) worstResult = result;
+    result = enableFIFO(false);
+    if (result > worstResult) worstResult = result;
 
     // Disable the DMP
-    result = enableDMP(false); if (result > worstResult) worstResult = result;
+    result = enableDMP(false);
+    if (result > worstResult) worstResult = result;
 
     // Set Gyro FSR (Full scale range) to 2000dps through GYRO_CONFIG_1
     // Set Accel FSR (Full scale range) to 4g through ACCEL_CONFIG
@@ -1588,12 +1493,14 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     // dps500
     // dps1000
     // dps2000
-    result = setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS); if (result > worstResult) worstResult = result;
+    result = setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
+    if (result > worstResult) worstResult = result;
 
     // The InvenSense Nucleo code also enables the gyro DLPF (but leaves GYRO_DLPFCFG set to zero = 196.6Hz (3dB))
     // We found this by going through the SPI data generated by ZaneL's Teensy-ICM-20948 library byte by byte...
     // The gyro DLPF is enabled by default (GYRO_CONFIG_1 = 0x01) so the following line should have no effect, but we'll include it anyway
-    result = enableDLPF(ICM_20948_Internal_Gyr, true); if (result > worstResult) worstResult = result;
+    result = enableDLPF(ICM_20948_Internal_Gyr, true);
+    if (result > worstResult) worstResult = result;
 
     // Enable interrupt for FIFO overflow from FIFOs through INT_ENABLE_2
     // If we see this interrupt, we'll need to reset the FIFO
@@ -1601,17 +1508,22 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
 
     // Turn off what goes into the FIFO through FIFO_EN_1, FIFO_EN_2
     // Stop the peripheral data from being written to the FIFO by writing zero to FIFO_EN_1
-    result = setBank(0); if (result > worstResult) worstResult = result; // Select Bank 0
+    result = setBank(0);
+    if (result > worstResult) worstResult = result; // Select Bank 0
     uint8_t zero = 0;
-    result = write(AGB0_REG_FIFO_EN_1, &zero, 1); if (result > worstResult) worstResult = result;
+    result = write(AGB0_REG_FIFO_EN_1, &zero, 1);
+    if (result > worstResult) worstResult = result;
     // Stop the accelerometer, gyro and temperature data from being written to the FIFO by writing zero to FIFO_EN_2
-    result = write(AGB0_REG_FIFO_EN_2, &zero, 1); if (result > worstResult) worstResult = result;
+    result = write(AGB0_REG_FIFO_EN_2, &zero, 1);
+    if (result > worstResult) worstResult = result;
 
     // Turn off data ready interrupt through INT_ENABLE_1
-    result = intEnableRawDataReady(false); if (result > worstResult) worstResult = result;
+    result = intEnableRawDataReady(false);
+    if (result > worstResult) worstResult = result;
 
     // Reset FIFO through FIFO_RST
-    result = resetFIFO(); if (result > worstResult) worstResult = result;
+    result = resetFIFO();
+    if (result > worstResult) worstResult = result;
 
     // Set gyro sample rate divider with GYRO_SMPLRT_DIV
     // Set accel sample rate divider with ACCEL_SMPLRT_DIV_2
@@ -1622,35 +1534,45 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     mySmplrt.a = 4; // 225Hz
     //mySmplrt.g = 8; // 112Hz
     //mySmplrt.a = 8; // 112Hz
-    result = setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt); if (result > worstResult) worstResult = result;
+    result = setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt);
+    if (result > worstResult) worstResult = result;
 
     // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
-    result = setDMPstartAddress(); if (result > worstResult) worstResult = result; // Defaults to DMP_START_ADDRESS
+    result = setDMPstartAddress();
+    if (result > worstResult) worstResult = result; // Defaults to DMP_START_ADDRESS
 
     // Now load the DMP firmware
-    result = loadDMPFirmware(); if (result > worstResult) worstResult = result;
+    result = loadDMPFirmware();
+    if (result > worstResult) worstResult = result;
 
     // Write the 2 byte Firmware Start Value to ICM PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
-    result = setDMPstartAddress(); if (result > worstResult) worstResult = result; // Defaults to DMP_START_ADDRESS
+    result = setDMPstartAddress();
+    if (result > worstResult) worstResult = result; // Defaults to DMP_START_ADDRESS
 
     // Set the Hardware Fix Disable register to 0x48
-    result = setBank(0); if (result > worstResult) worstResult = result; // Select Bank 0
+    result = setBank(0);
+    if (result > worstResult) worstResult = result; // Select Bank 0
     uint8_t fix = 0x48;
-    result = write(AGB0_REG_HW_FIX_DISABLE, &fix, 1); if (result > worstResult) worstResult = result;
+    result = write(AGB0_REG_HW_FIX_DISABLE, &fix, 1);
+    if (result > worstResult) worstResult = result;
 
     // Set the Single FIFO Priority Select register to 0xE4
-    result = setBank(0); if (result > worstResult) worstResult = result; // Select Bank 0
+    result = setBank(0);
+    if (result > worstResult) worstResult = result; // Select Bank 0
     uint8_t fifoPrio = 0xE4;
-    result = write(AGB0_REG_SINGLE_FIFO_PRIORITY_SEL, &fifoPrio, 1); if (result > worstResult) worstResult = result;
+    result = write(AGB0_REG_SINGLE_FIFO_PRIORITY_SEL, &fifoPrio, 1);
+    if (result > worstResult) worstResult = result;
 
     // Configure Accel scaling to DMP
     // The DMP scales accel raw data internally to align 1g as 2^25
     // In order to align internal accel raw data 2^25 = 1g write 0x04000000 when FSR is 4g
     const unsigned char accScale[4] = {0x04, 0x00, 0x00, 0x00};
-    result = writeDMPmems(ACC_SCALE, 4, &accScale[0]); if (result > worstResult) worstResult = result; // Write accScale to ACC_SCALE DMP register
+    result = writeDMPmems(ACC_SCALE, 4, &accScale[0]);
+    if (result > worstResult) worstResult = result; // Write accScale to ACC_SCALE DMP register
     // In order to output hardware unit data as configured FSR write 0x00040000 when FSR is 4g
     const unsigned char accScale2[4] = {0x00, 0x04, 0x00, 0x00};
-    result = writeDMPmems(ACC_SCALE2, 4, &accScale2[0]); if (result > worstResult) worstResult = result; // Write accScale2 to ACC_SCALE2 DMP register
+    result = writeDMPmems(ACC_SCALE2, 4, &accScale2[0]);
+    if (result > worstResult) worstResult = result; // Write accScale2 to ACC_SCALE2 DMP register
 
     // Configure Compass mount matrix and scale to DMP
     // The mount matrix write to DMP register is used to align the compass axes with accel/gyro.
@@ -1664,35 +1586,54 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     const unsigned char mountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
     const unsigned char mountMultiplierPlus[4] = {0x09, 0x99, 0x99, 0x99};  // Value taken from InvenSense Nucleo example
     const unsigned char mountMultiplierMinus[4] = {0xF6, 0x66, 0x66, 0x67}; // Value taken from InvenSense Nucleo example
-    result = writeDMPmems(CPASS_MTX_00, 4, &mountMultiplierPlus[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_01, 4, &mountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_02, 4, &mountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_10, 4, &mountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_11, 4, &mountMultiplierMinus[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_12, 4, &mountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_20, 4, &mountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_21, 4, &mountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierMinus[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_00, 4, &mountMultiplierPlus[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_01, 4, &mountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_02, 4, &mountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_10, 4, &mountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_11, 4, &mountMultiplierMinus[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_12, 4, &mountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_20, 4, &mountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_21, 4, &mountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_MTX_22, 4, &mountMultiplierMinus[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the B2S Mounting Matrix
     const unsigned char b2sMountMultiplierZero[4] = {0x00, 0x00, 0x00, 0x00};
     const unsigned char b2sMountMultiplierPlus[4] = {0x40, 0x00, 0x00, 0x00}; // Value taken from InvenSense Nucleo example
-    result = writeDMPmems(B2S_MTX_00, 4, &b2sMountMultiplierPlus[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_01, 4, &b2sMountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_02, 4, &b2sMountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_10, 4, &b2sMountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_11, 4, &b2sMountMultiplierPlus[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_12, 4, &b2sMountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_20, 4, &b2sMountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_21, 4, &b2sMountMultiplierZero[0]); if (result > worstResult) worstResult = result;
-    result = writeDMPmems(B2S_MTX_22, 4, &b2sMountMultiplierPlus[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_00, 4, &b2sMountMultiplierPlus[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_01, 4, &b2sMountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_02, 4, &b2sMountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_10, 4, &b2sMountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_11, 4, &b2sMountMultiplierPlus[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_12, 4, &b2sMountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_20, 4, &b2sMountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_21, 4, &b2sMountMultiplierZero[0]);
+    if (result > worstResult) worstResult = result;
+    result = writeDMPmems(B2S_MTX_22, 4, &b2sMountMultiplierPlus[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the DMP Gyro Scaling Factor
     // @param[in] gyro_div Value written to GYRO_SMPLRT_DIV register, where
     //            0=1125Hz sample rate, 1=562.5Hz sample rate, ... 4=225Hz sample rate, ...
     //            10=102.2727Hz sample rate, ... etc.
     // @param[in] gyro_level 0=250 dps, 1=500 dps, 2=1000 dps, 3=2000 dps
-    result = setGyroSF(4, 3); if (result > worstResult) worstResult = result; // 4 = 225Hz (see above), 3 = 2000dps (see above)
+    result = setGyroSF(4, 3);
+    if (result > worstResult) worstResult = result; // 4 = 225Hz (see above), 3 = 2000dps (see above)
 
     // Configure the Gyro full scale
     // 2000dps : 2^28
@@ -1700,34 +1641,40 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     //  500dps : 2^26
     //  250dps : 2^25
     const unsigned char gyroFullScale[4] = {0x10, 0x00, 0x00, 0x00}; // 2000dps : 2^28
-    result = writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the Accel Only Gain: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
     //const unsigned char accelOnlyGain[4] = {0x03, 0xA4, 0x92, 0x49}; // 56Hz
     const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // 225Hz
     //const unsigned char accelOnlyGain[4] = {0x01, 0xD1, 0x74, 0x5D}; // 112Hz
-    result = writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
     //const unsigned char accelAlphaVar[4] = {0x34, 0x92, 0x49, 0x25}; // 56Hz
     const unsigned char accelAlphaVar[4] = {0x3D, 0x27, 0xD2, 0x7D}; // 225Hz
     //const unsigned char accelAlphaVar[4] = {0x3A, 0x49, 0x24, 0x92}; // 112Hz
-    result = writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
     //const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
     const unsigned char accelAVar[4] = {0x02, 0xD8, 0x2D, 0x83}; // 225Hz
     //const unsigned char accelAVar[4] = {0x05, 0xB6, 0xDB, 0x6E}; // 112Hz
-    result = writeDMPmems(ACCEL_A_VAR, 4, &accelAVar[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(ACCEL_A_VAR, 4, &accelAVar[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the Accel Cal Rate
     const unsigned char accelCalRate[4] = {0x00, 0x00}; // Value taken from InvenSense Nucleo example
-    result = writeDMPmems(ACCEL_CAL_RATE, 2, &accelCalRate[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(ACCEL_CAL_RATE, 2, &accelCalRate[0]);
+    if (result > worstResult) worstResult = result;
 
     // Configure the Compass Time Buffer. The I2C Master ODR Configuration (see above) sets the magnetometer read rate to 68.75Hz.
     // Let's set the Compass Time Buffer to 69 (Hz).
     const unsigned char compassRate[2] = {0x00, 0x45}; // 69Hz
-    result = writeDMPmems(CPASS_TIME_BUFFER, 2, &compassRate[0]); if (result > worstResult) worstResult = result;
+    result = writeDMPmems(CPASS_TIME_BUFFER, 2, &compassRate[0]);
+    if (result > worstResult) worstResult = result;
 
     // Enable DMP interrupt
     // This would be the most efficient way of getting the DMP data, instead of polling the FIFO
@@ -1739,165 +1686,138 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
 }
 
 
-void beginDataLogging()
-{
-  if (online.microSD == true && settings.logData == true)
-  {
-    //If we don't have a file yet, create one. Otherwise, re-open the last used file
-    if (strlen(sensorDataFileName) == 0)
-      strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
+void beginDataLogging() {
+    if (online.microSD == true && settings.logData == true) {
+        //If we don't have a file yet, create one. Otherwise, re-open the last used file
+        if (strlen(sensorDataFileName) == 0)
+            strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
 
-    // O_CREAT - create the file if it does not exist
-    // O_APPEND - seek to the end of the file prior to each write
-    // O_WRITE - open for write
-    if (sensorDataFile.open(sensorDataFileName, O_CREAT | O_APPEND | O_WRITE) == false)
-    {
-      SerialPrintln(F("Failed to create sensor data file"));
-      online.dataLogging = false;
-      return;
-    }
+        // O_CREAT - create the file if it does not exist
+        // O_APPEND - seek to the end of the file prior to each write
+        // O_WRITE - open for write
+        if (sensorDataFile.open(sensorDataFileName, O_CREAT | O_APPEND | O_WRITE) == false) {
+            SerialPrintln(F("Failed to create sensor data file"));
+            online.dataLogging = false;
+            return;
+        }
 
-    updateDataFileCreate(&sensorDataFile); // Update the file create time & date
+        updateDataFileCreate(&sensorDataFile); // Update the file create time & date
 
-    online.dataLogging = true;
-  }
-  else
-    online.dataLogging = false;
+        online.dataLogging = true;
+    } else
+        online.dataLogging = false;
 }
 
-void beginSerialLogging()
-{
-  if (online.microSD == true && settings.logSerial == true)
-  {
-    //If we don't have a file yet, create one. Otherwise, re-open the last used file
-    if (strlen(serialDataFileName) == 0)
-      strcpy(serialDataFileName, findNextAvailableLog(settings.nextSerialLogNumber, "serialLog"));
+void beginSerialLogging() {
+    if (online.microSD == true && settings.logSerial == true) {
+        //If we don't have a file yet, create one. Otherwise, re-open the last used file
+        if (strlen(serialDataFileName) == 0)
+            strcpy(serialDataFileName, findNextAvailableLog(settings.nextSerialLogNumber, "serialLog"));
 
-    if (serialDataFile.open(serialDataFileName, O_CREAT | O_APPEND | O_WRITE) == false)
-    {
-      SerialPrintln(F("Failed to create serial log file"));
-      //systemError(ERROR_FILE_OPEN);
-      online.serialLogging = false;
-      return;
-    }
+        if (serialDataFile.open(serialDataFileName, O_CREAT | O_APPEND | O_WRITE) == false) {
+            SerialPrintln(F("Failed to create serial log file"));
+            //systemError(ERROR_FILE_OPEN);
+            online.serialLogging = false;
+            return;
+        }
 
-    updateDataFileCreate(&serialDataFile); // Update the file create time & date
+        updateDataFileCreate(&serialDataFile); // Update the file create time & date
 
-    //We need to manually restore the Serial1 TX and RX pins
-    configureSerial1TxRx();
+        //We need to manually restore the Serial1 TX and RX pins
+        configureSerial1TxRx();
 
-    Serial1.begin(settings.serialLogBaudRate);
+        Serial1.begin(settings.serialLogBaudRate);
 
-    online.serialLogging = true;
-  }
-  else
-    online.serialLogging = false;
+        online.serialLogging = true;
+    } else
+        online.serialLogging = false;
 }
 
-void beginSerialOutput()
-{
-  if (settings.outputSerial == true)
-  {
-    //We need to manually restore the Serial1 TX and RX pins
-    configureSerial1TxRx();
+void beginSerialOutput() {
+    if (settings.outputSerial == true) {
+        //We need to manually restore the Serial1 TX and RX pins
+        configureSerial1TxRx();
 
-    Serial1.begin(settings.serialLogBaudRate); // (Re)start the serial port
-    online.serialOutput = true;
-  }
-  else
-    online.serialOutput = false;
+        Serial1.begin(settings.serialLogBaudRate); // (Re)start the serial port
+        online.serialOutput = true;
+    } else
+        online.serialOutput = false;
 }
 
-void updateDataFileCreate(SdFileType *dataFile)
-{
-  myRTC.getTime(); //Get the RTC time so we can use it to update the create time
-  //Update the file create time
-  dataFile->timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
+void updateDataFileCreate(SdFileType *dataFile) {
+    myRTC.getTime(); //Get the RTC time so we can use it to update the create time
+    //Update the file create time
+    dataFile->timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
 }
 
-void updateDataFileAccess(SdFileType *dataFile)
-{
-  myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
-  //Update the file access time
-  dataFile->timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-  //Update the file write time
-  dataFile->timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
+void updateDataFileAccess(SdFileType *dataFile) {
+    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
+    //Update the file access time
+    dataFile->timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
+    //Update the file write time
+    dataFile->timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
 }
 
 //Called once number of milliseconds has passed
-extern "C" void am_stimer_cmpr6_isr(void)
-{
-  uint32_t ui32Status = am_hal_stimer_int_status_get(false);
-  if (ui32Status & AM_HAL_STIMER_INT_COMPAREG)
-  {
-    am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREG);
-  }
+extern "C" void am_stimer_cmpr6_isr(void) {
+    uint32_t ui32Status = am_hal_stimer_int_status_get(false);
+    if (ui32Status & AM_HAL_STIMER_INT_COMPAREG) {
+        am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREG);
+    }
 }
 
 //Power Loss ISR
-void powerLossISR(void)
-{
-  powerLossSeen = true;
+void powerLossISR(void) {
+    powerLossSeen = true;
 }
 
 //Stop Logging ISR
-void stopLoggingISR(void)
-{
-  stopLoggingSeen = true;
+void stopLoggingISR(void) {
+    stopLoggingSeen = true;
 }
 
 //Trigger Pin ISR
-void triggerPinISR(void)
-{
-  triggerEdgeSeen = true;
+void triggerPinISR(void) {
+    triggerEdgeSeen = true;
 }
 
-void SerialFlush(void)
-{
-  Serial.flush();
-  if (settings.useTxRxPinsForTerminal == true)
-  {
-    Serial1.flush();
-  }
+void SerialFlush(void) {
+    Serial.flush();
+    if (settings.useTxRxPinsForTerminal == true) {
+        Serial1.flush();
+    }
 }
 
 // gfvalvo's flash string helper code: https://forum.arduino.cc/index.php?topic=533118.msg3634809#msg3634809
 
-void SerialPrint(const char *line)
-{
-  DoSerialPrint([](const char *ptr) {return *ptr;}, line);
+void SerialPrint(const char *line) {
+    DoSerialPrint([](const char *ptr) { return *ptr; }, line);
 }
 
-void SerialPrint(const __FlashStringHelper *line)
-{
-  DoSerialPrint([](const char *ptr) {return (char) pgm_read_byte_near(ptr);}, (const char*) line);
+void SerialPrint(const __FlashStringHelper *line) {
+    DoSerialPrint([](const char *ptr) { return (char) pgm_read_byte_near(ptr); }, (const char *) line);
 }
 
-void SerialPrintln(const char *line)
-{
-  DoSerialPrint([](const char *ptr) {return *ptr;}, line, true);
+void SerialPrintln(const char *line) {
+    DoSerialPrint([](const char *ptr) { return *ptr; }, line, true);
 }
 
-void SerialPrintln(const __FlashStringHelper *line)
-{
-  DoSerialPrint([](const char *ptr) {return (char) pgm_read_byte_near(ptr);}, (const char*) line, true);
+void SerialPrintln(const __FlashStringHelper *line) {
+    DoSerialPrint([](const char *ptr) { return (char) pgm_read_byte_near(ptr); }, (const char *) line, true);
 }
 
-void DoSerialPrint(char (*funct)(const char *), const char *string, bool newLine)
-{
-  char ch;
+void DoSerialPrint(char (*funct)(const char *), const char *string, bool newLine) {
+    char ch;
 
-  while ((ch = funct(string++)))
-  {
-    Serial.print(ch);
-    if (settings.useTxRxPinsForTerminal == true)
-      Serial1.print(ch);
-  }
+    while ((ch = funct(string++))) {
+        Serial.print(ch);
+        if (settings.useTxRxPinsForTerminal == true)
+            Serial1.print(ch);
+    }
 
-  if (newLine)
-  {
-    Serial.println();
-    if (settings.useTxRxPinsForTerminal == true)
-      Serial1.println();
-  }
+    if (newLine) {
+        Serial.println();
+        if (settings.useTxRxPinsForTerminal == true)
+            Serial1.println();
+    }
 }
