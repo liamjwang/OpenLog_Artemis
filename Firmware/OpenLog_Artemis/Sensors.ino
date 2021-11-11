@@ -57,6 +57,7 @@ void updateBLECharacteristic(int *theBLECharacteristic, char *theString) {
     }
 }
 
+
 //Query each enabled sensor for its most recent data
 void getData() {
     measurementCount++;
@@ -75,6 +76,8 @@ void getData() {
         getTimeString(timeString); // getTimeString is in timeStamp.ino
         strcat(outputData, timeString);
         updateBLECharacteristic(&bleCharacteristic, timeString);
+        outputDataBin.number.stamp = myRTC.getEpoch();
+        outputDataBin.number.micros = micros();
     }
 
     if (settings.logA11) {
@@ -221,6 +224,9 @@ void getData() {
 //            lastMeasurementValue = (float)dmpData.Quat6.Data.Q1;
 //            measurementCount++;
 //        }
+                outputDataBin.number.Q1 = dmpData.Quat6.Data.Q1;
+                outputDataBin.number.Q2 = dmpData.Quat6.Data.Q2;
+                outputDataBin.number.Q3 = dmpData.Quat6.Data.Q3;
             }
             if (settings.imuLogDMPQuat9) {
                 olaftoa(((double) dmpData.Quat9.Data.Q1) / 1073741824.0, tempData1, 5, sizeof(tempData1) / sizeof(char));
@@ -250,6 +256,9 @@ void getData() {
 //            lastMeasurementValue = (float)dmpData.Raw_Accel.Data.X;
 //            measurementCount++;
 //        }
+                outputDataBin.number.X = dmpData.Raw_Accel.Data.X;
+                outputDataBin.number.Y = dmpData.Raw_Accel.Data.Y;
+                outputDataBin.number.Z = dmpData.Raw_Accel.Data.Z;
             }
             if (settings.imuLogDMPGyro) {
                 sprintf(tempData, "%d,%d,%d,", dmpData.Raw_Gyro.Data.X, dmpData.Raw_Gyro.Data.Y, dmpData.Raw_Gyro.Data.Z);
@@ -1735,8 +1744,8 @@ void printHelperText(bool terminalPrint, bool filePrint) {
 
     if (terminalPrint)
         SerialPrint(helperText);
-    if ((filePrint) && (settings.logData == true) && (online.microSD) && (settings.enableSD && online.microSD))
-        sensorDataFile.print(helperText);
+//    if ((filePrint) && (settings.logData == true) && (online.microSD) && (settings.enableSD && online.microSD))
+//        sensorDataFile.print(helperText);
 }
 
 //If certain devices are attached, we need to reduce the I2C max speed

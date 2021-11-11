@@ -289,6 +289,28 @@ unsigned long measurementCount = 0; //Used to calc the actual update rate.
 float lastMeasurementValue = 0; //Used to calc the actual update rate.
 unsigned long measurementTotal = 0; //The total number of recorded measurements. (Doesn't get reset when the menu is opened)
 char outputData[512 * 2]; //Factor of 512 for easier recording to SD in 512 chunks
+
+struct MSG {
+    // timestamp
+    uint32_t stamp;
+    uint64_t micros;
+    // gyro
+    int32_t Q1;
+    int32_t Q2;
+    int32_t Q3;
+    // accel
+    int16_t X;
+    int16_t Y;
+    int16_t Z;
+};
+
+typedef union {
+    MSG number;
+    uint8_t bytes[sizeof(MSG)];
+} MSG_UNION;
+MSG_UNION outputDataBin;
+//char outputDataBin[512 * 2]; //Factor of 512 for easier recording to SD in 512 chunks
+//uint32_t outputDataLen; //Factor of 512 for easier recording to SD in 512 chunks
 unsigned long lastReadTime = 0; //Used to delay until user wants to record a new reading
 unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
 unsigned int totalCharactersPrinted = 0; //Limit output rate based on baud rate and number of characters to print
@@ -319,6 +341,8 @@ void SerialPrintln(const char *);
 void SerialPrintln(const __FlashStringHelper *);
 
 void DoSerialPrint(char (*)(const char *), const char *, bool newLine = false);
+
+void bleSendFile(const char *fileToSend);
 
 #define DUMP(varname) {Serial.printf("%s: %d\r\n", #varname, varname); if (settings.useTxRxPinsForTerminal == true) Serial1.printf("%s: %d\r\n", #varname, varname);}
 #define SerialPrintf1(var) {Serial.printf( var ); if (settings.useTxRxPinsForTerminal == true) Serial1.printf( var );}
@@ -454,6 +478,42 @@ BLEStringCharacteristic bleCharacteristic46(kCharacteristicUUID46, BLERead | BLE
 BLEStringCharacteristic bleCharacteristic47(kCharacteristicUUID47, BLERead | BLENotify, kMessageMax);
 BLEStringCharacteristic bleCharacteristic48(kCharacteristicUUID48, BLERead | BLENotify, kMessageMax);
 BLEStringCharacteristic bleCharacteristic49(kCharacteristicUUID49, BLERead | BLENotify, kMessageMax);
+
+// Macro based on a master UUID that can be modified for each characteristic.
+#define FILE_TRANSFER_UUID(val) ("bf88b656-" val "-4a61-86e0-769c741026c0")
+
+BLEService service(FILE_TRANSFER_UUID("0000"));
+
+// How big each transfer block can be. In theory this could be up to 512 bytes, but
+// in practice I've found that going over 128 affects reliability of the connection.
+//constexpr int32_t file_block_byte_count = 512;
+constexpr int32_t file_block_byte_count = 128;
+
+// Where each data block is written to during the transfer.
+BLECharacteristic file_block_characteristic(FILE_TRANSFER_UUID("3000"), BLERead | BLENotify, file_block_byte_count);
+
+// Write the expected total length of the file in bytes to this characteristic
+// before sending the command to transfer a file.
+BLECharacteristic file_length_characteristic(FILE_TRANSFER_UUID("3001"), BLERead | BLENotify, sizeof(uint64_t));
+
+// Read-only attribute that defines how large a file the sketch can handle.
+BLECharacteristic file_maximum_length_characteristic(FILE_TRANSFER_UUID("3002"), BLERead, sizeof(uint32_t));
+
+// Write the checksum that you expect for the file here before you trigger the transfer.
+BLECharacteristic file_checksum_characteristic(FILE_TRANSFER_UUID("3003"), BLERead | BLENotify, sizeof(uint32_t));
+
+// Writing a command of 1 starts a file transfer (the length and checksum characteristics should already have been set).
+// A command of 2 tries to cancel any pending file transfers. All other commands are undefined.
+BLECharacteristic command_characteristic(FILE_TRANSFER_UUID("3004"), BLEWrite, sizeof(uint32_t));
+
+// A status set to 0 means a file transfer succeeded, 1 means there was an error, and 2 means a file transfer is
+// in progress.
+BLECharacteristic transfer_status_characteristic(FILE_TRANSFER_UUID("3005"), BLERead | BLENotify, sizeof(uint32_t));
+
+// Informative text describing the most recent error, for user interface purposes.
+constexpr int32_t error_message_byte_count = 128;
+BLECharacteristic error_message_characteristic(FILE_TRANSFER_UUID("3006"), BLERead | BLENotify, error_message_byte_count);
+
 
 int numBLECharacteristics = 0;
 char bleCharacteristicsValues[kMaxCharacteristics][kMessageMax];
@@ -605,7 +665,34 @@ void setup() {
     else
         printHelperText(false, false); //call printHelperText to generate the number of characteristics
 
-    if (settings.useBLE) {
+
+    if (!BLE.begin()) {
+        SerialPrintln(F("BLE.begin failed!"));
+    } else {
+        BLE.setLocalName(kTargetServiceName);
+        BLE.setDeviceName(kTargetServiceName);
+        BLE.setAdvertisedService(service); //Add the service UUID
+
+        service.addCharacteristic(file_block_characteristic);
+        service.addCharacteristic(file_length_characteristic);
+        service.addCharacteristic(file_maximum_length_characteristic);
+        service.addCharacteristic(command_characteristic);
+        service.addCharacteristic(file_checksum_characteristic);
+        service.addCharacteristic(transfer_status_characteristic);
+        service.addCharacteristic(error_message_characteristic);
+
+
+        BLE.addService(service); //Add the service
+
+        command_characteristic.setEventHandler(BLEWritten, onCommandWritten);
+        BLE.setEventHandler(BLEConnected, ConnectHandler);
+        BLE.setEventHandler(BLEDisconnected, DisconnectHandler);
+
+        BLE.advertise(); //Start advertising
+    }
+
+    if (false) {
+//    if (settings.useBLE) {
         SerialPrintln(F("Starting BLE..."));
 
         if (!BLE.begin()) {
@@ -744,12 +831,149 @@ void setup() {
         menuMain();
 }
 
+void ConnectHandler(BLEDevice central) {
+    // central connected event handler
+    Serial.print("Connected event, central: ");
+    Serial.println(central.address());
+    BLE.advertise();
+}
+
+void DisconnectHandler(BLEDevice central) {
+    // central disconnected event handler
+    Serial.print("Disconnected event, central: ");
+    Serial.println(central.address());
+    BLE.advertise();
+}
+
+void onCommandWritten(BLEDevice central, BLECharacteristic characteristic) {
+    if (settings.enableSD && online.microSD) {
+        //Close log files before showing sdCardMenu
+        if (online.dataLogging == true) {
+            sensorDataFile.sync();
+            updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+            sensorDataFile.close();
+        }
+        if (online.serialLogging == true) {
+            serialDataFile.sync();
+            updateDataFileAccess(&serialDataFile); // Update the file access time & date
+            serialDataFile.close();
+        }
+
+        SerialPrintln(F(""));
+        SerialPrintln(F(""));
+        SerialPrintln(F("BLE Command written!!"));
+
+        int32_t command_value;
+        characteristic.readValue(command_value);
+
+        SerialPrint(F("BLE Command value: "));
+        SerialPrintf2("%i\n", command_value)
+
+        bleSendFile(sensorDataFileName);
+//        bleSendFile("OLA_settings.txt");
+
+        SerialPrintln(F("File transfer finished!"));
+        SerialPrintln(F(""));
+        SerialPrintln(F(""));
+
+        if (online.dataLogging == true) {
+            strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
+            beginDataLogging(); //180ms
+            if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
+        }
+        if (online.serialLogging == true) {
+            strcpy(serialDataFileName, findNextAvailableLog(settings.nextSerialLogNumber, "serialLog"));
+            beginSerialLogging();
+        }
+    }
+}
+
+void bleSendFile(const char *fileName) {
+    if (sd.exists(fileName)) {
+        SdFile fileToSend; //FAT32
+        if (fileToSend.open(fileName, O_READ) == false) {
+            SerialPrintln(F("Failed to open settings file"));
+            return;
+        }
+
+        uint64_t fileSize = fileToSend.size();
+        if (fileSize > std::numeric_limits<uint32_t>::max()){
+            SerialPrintln(F("Cannot transfer file larger than 4gb (we can but I didn't implement it)"));
+            return;
+        }
+        file_length_characteristic.writeValue((uint32_t) fileSize);
+
+        char data[file_block_byte_count];
+        int lineNumber = 0;
+
+        uint32_t crc = 0;
+        uint32_t command = 0;
+
+        while (fileToSend.available()) {
+            int n = fileToSend.read(data, sizeof(data));
+            file_block_characteristic.writeValue(data, n, false);
+            crc = crc32(crc, (uint8_t*) data, n);
+            command_characteristic.readValue(command);
+            if (command == 2) {
+                SerialPrintln("File transfer canceled");
+                break;
+            }
+
+            lineNumber++;
+        }
+        SerialPrintf2("Lines: %fileSize\n", lineNumber)
+
+
+        //SerialPrintln(F("Config file read complete"));
+        fileToSend.close();
+        if (command == 2) {
+            file_checksum_characteristic.writeValue((uint32_t) 0);
+        } else {
+            file_checksum_characteristic.writeValue(crc);
+        }
+    } else {
+        SerialPrintln(F("No config file found. Using settings from EEPROM."));
+        //The defaults of the struct will be recorded to a file later on.
+    }
+}
+
+
+// See http://home.thep.lu.se/~bjorn/crc/ for more information on simple CRC32 calculations.
+uint32_t crc32_for_byte(uint32_t r) {
+    for (int j = 0; j < 8; ++j) {
+        r = (r & 1 ? 0 : (uint32_t) 0xedb88320L) ^ r >> 1;
+    }
+    return r ^ (uint32_t) 0xff000000L;
+}
+
+uint32_t crc32(uint32_t initial, const uint8_t *data, size_t data_length) {
+    constexpr int table_size = 256;
+    static uint32_t table[table_size];
+    static bool is_table_initialized = false;
+    if (!is_table_initialized) {
+        for (size_t i = 0; i < table_size; ++i) {
+            table[i] = crc32_for_byte(i);
+        }
+        is_table_initialized = true;
+    }
+    uint32_t crc = initial;
+    for (size_t i = 0; i < data_length; ++i) {
+        const uint8_t crc_low_byte = static_cast<uint8_t>(crc);
+        const uint8_t data_byte = data[i];
+        const uint8_t table_index = crc_low_byte ^ data_byte;
+        crc = table[table_index] ^ (crc >> 8);
+    }
+    return crc;
+}
+
 void loop() {
 
     checkBattery(); // Check for low battery
 
-    if (usingBLE)
-        BLEDevice central = BLE.central();
+    BLEDevice central = BLE.central();
+
+//    if (usingBLE)
+//        BLEDevice central = BLE.central();
 
     if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
         menuMain(); //Present user menu
@@ -888,13 +1112,20 @@ void loop() {
         if (settings.logData == true) {
             if (settings.enableSD && online.microSD) {
                 digitalWrite(PIN_STAT_LED, HIGH);
-                uint32_t recordLength = sensorDataFile.write(outputData, strlen(outputData));
-                if (recordLength != strlen(outputData)) //Record the buffer to the card
+                uint32_t recordLength = sensorDataFile.write(outputDataBin.bytes, sizeof(MSG));
+                if (recordLength != sizeof(MSG)) //Record the buffer to the card
                 {
                     if (settings.printDebugMessages == true) {
                         SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
                     }
                 }
+//                uint32_t recordLength = sensorDataFile.write(outputData, strlen(outputData));
+//                if (recordLength != strlen(outputData)) //Record the buffer to the card
+//                {
+//                    if (settings.printDebugMessages == true) {
+//                        SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
+//                    }
+//                }
 
                 //Force sync every 500ms
                 if (bestMillis() - lastDataLogSyncTime > 500) {
