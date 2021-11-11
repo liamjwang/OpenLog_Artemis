@@ -24,34 +24,37 @@ char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
 
   //Search for next available log spot
   static char newFileName[40];
-  while (1)
-  {
-    char newFileNumberStr[6];
-    if (newFileNumber < 10)
-      sprintf(newFileNumberStr, "0000%d", newFileNumber);
-    else if (newFileNumber < 100)
-      sprintf(newFileNumberStr, "000%d", newFileNumber);
-    else if (newFileNumber < 1000)
-      sprintf(newFileNumberStr, "00%d", newFileNumber);
-    else if (newFileNumber < 10000)
-      sprintf(newFileNumberStr, "0%d", newFileNumber);
-    else
-      sprintf(newFileNumberStr, "%d", newFileNumber);
-    sprintf(newFileName, "%s%s.bin", fileLeader, newFileNumberStr); //Splice the new file number into this file name. Max no. is 99999.
+  sprintf(newFileName, "%s.bin", fileLeader);
+  if (sd.exists(newFileName)) {
+      while (1)
+      {
+          char newFileNumberStr[6];
+          if (newFileNumber < 10)
+              sprintf(newFileNumberStr, "0000%d", newFileNumber);
+          else if (newFileNumber < 100)
+              sprintf(newFileNumberStr, "000%d", newFileNumber);
+          else if (newFileNumber < 1000)
+              sprintf(newFileNumberStr, "00%d", newFileNumber);
+          else if (newFileNumber < 10000)
+              sprintf(newFileNumberStr, "0%d", newFileNumber);
+          else
+              sprintf(newFileNumberStr, "%d", newFileNumber);
+          sprintf(newFileName, "%s%s.bin", fileLeader, newFileNumberStr); //Splice the new file number into this file name. Max no. is 99999.
 //    sprintf(newFileName, "%s%s.TXT", fileLeader, newFileNumberStr); //Splice the new file number into this file name. Max no. is 99999.
 
-    if (sd.exists(newFileName) == false) break; //File name not found so we will use it.
+          if (sd.exists(newFileName) == false) break; //File name not found so we will use it.
 
-    //File exists so open and see if it is empty. If so, use it.
-    newFile.open(newFileName, O_READ);
-    if (newFile.fileSize() == 0) break; // File is empty so we will use it. Note: we need to make the user aware that this can happen!
+          //File exists so open and see if it is empty. If so, use it.
+          newFile.open(newFileName, O_READ);
+          if (newFile.fileSize() == 0) break; // File is empty so we will use it. Note: we need to make the user aware that this can happen!
 
-    newFile.close(); // Close this existing file we just opened.
+          newFile.close(); // Close this existing file we just opened.
 
-    newFileNumber++; //Try the next number
-    if (newFileNumber >= 100000) break; // Have we hit the maximum number of files?
+          newFileNumber++; //Try the next number
+          if (newFileNumber >= 100000) break; // Have we hit the maximum number of files?
+      }
   }
-  
+
   newFile.close(); //Close this new file we just opened
 
   newFileNumber++; //Increment so the next power up uses the next file #
