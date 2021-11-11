@@ -506,8 +506,8 @@ void setup() {
     //We need to manually restore the Serial1 TX and RX pins after they were changed by productionTest()
     configureSerial1TxRx();
 
-    Serial.begin(115200); //Default for initial debug messages if necessary
-    Serial1.begin(115200); //Default for initial debug messages if necessary
+    Serial.begin(settings.serialTerminalBaudRate); //Default for initial debug messages if necessary
+    Serial1.begin(settings.serialTerminalBaudRate); //Default for initial debug messages if necessary
 
     //pinMode(PIN_LOGIC_DEBUG, OUTPUT); // Debug pin to assist tracking down slippery mux bugs
     //digitalWrite(PIN_LOGIC_DEBUG, HIGH);
@@ -538,6 +538,15 @@ void setup() {
     Serial.begin(settings.serialTerminalBaudRate);
 
     SerialPrintf3("Artemis OpenLog v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    SerialPrintf2("Size: %ld\r\n", sizeof(outputDataBin.number.stamp)+
+            sizeof(outputDataBin.number.micros)+
+            sizeof(outputDataBin.number.Q1)+
+            sizeof(outputDataBin.number.Q2)+
+            sizeof(outputDataBin.number.Q3)+
+            sizeof(outputDataBin.number.X)+
+            sizeof(outputDataBin.number.Y)+
+            sizeof(outputDataBin.number.Z));
+
 
     if (settings.useGPIO32ForStopLogging == true) {
         SerialPrintln(F("Stop Logging is enabled. Pull GPIO pin 32 to GND to stop logging."));
@@ -910,13 +919,21 @@ void loop() {
         if (settings.logData == true) {
             if (settings.enableSD && online.microSD) {
                 digitalWrite(PIN_STAT_LED, HIGH);
-                uint32_t recordLength = sensorDataFile.write(outputDataBin.bytes, sizeof(MSG));
-                if (recordLength != sizeof(MSG)) //Record the buffer to the card
-                {
-                    if (settings.printDebugMessages == true) {
-                        SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
-                    }
-                }
+                sensorDataFile.write(&outputDataBin.number.stamp, sizeof(outputDataBin.number.stamp));
+                sensorDataFile.write(&outputDataBin.number.micros, sizeof(outputDataBin.number.micros));
+                sensorDataFile.write(&outputDataBin.number.Q1, sizeof(outputDataBin.number.Q1));
+                sensorDataFile.write(&outputDataBin.number.Q2, sizeof(outputDataBin.number.Q2));
+                sensorDataFile.write(&outputDataBin.number.Q3, sizeof(outputDataBin.number.Q3));
+                sensorDataFile.write(&outputDataBin.number.X, sizeof(outputDataBin.number.X));
+                sensorDataFile.write(&outputDataBin.number.Y, sizeof(outputDataBin.number.Y));
+                sensorDataFile.write(&outputDataBin.number.Z, sizeof(outputDataBin.number.Z));
+//                uint32_t recordLength = sensorDataFile.write(outputDataBin.bytes, sizeof(MSG));
+//                if (recordLength != sizeof(MSG)) //Record the buffer to the card
+//                {
+//                    if (settings.printDebugMessages == true) {
+//                        SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
+//                    }
+//                }
 //                uint32_t recordLength = sensorDataFile.write(outputData, strlen(outputData));
 //                if (recordLength != strlen(outputData)) //Record the buffer to the card
 //                {
