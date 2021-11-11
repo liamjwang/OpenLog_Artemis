@@ -204,7 +204,12 @@ void getData() {
             //  printDebug("getData: myICM.dataReady = " + (String)myICM.dataReady() + "\r\n");
             //}
         } else {
-            myICM.readDMPdataFromFIFO(&dmpData);
+            ICM_20948_Status_e fifoRes = myICM.readDMPdataFromFIFO(&dmpData);
+//            SerialPrintf2("%d\n", fifoRes);
+            if (fifoRes != ICM_20948_Stat_FIFONoDataAvail) {
+                newImuDataFlag = true;
+            }
+//            newImuDataFlag = true;
             while (myICM.status == ICM_20948_Stat_FIFOMoreDataAvail) {
                 myICM.readDMPdataFromFIFO(&dmpData); // Empty the FIFO - make sure data contains the most recent data
             }

@@ -290,6 +290,7 @@ float lastMeasurementValue = 0; //Used to calc the actual update rate.
 unsigned long measurementTotal = 0; //The total number of recorded measurements. (Doesn't get reset when the menu is opened)
 char outputData[512 * 2]; //Factor of 512 for easier recording to SD in 512 chunks
 
+bool newImuDataFlag = false;
 struct MSG {
     // timestamp
     uint32_t stamp;
@@ -367,7 +368,7 @@ Stream *DSERIAL;
 // https://www.uuidgenerator.net/
 
 #define kTargetServiceUUID    "2488bd28-b1df-4fe0-8611-22fda7c645f0"
-#define kTargetServiceName    "OpenLog Artemis"
+#define kTargetServiceName    "OpenLog Right"
 
 #define kMaxCharacteristics   50
 
@@ -425,7 +426,14 @@ Stream *DSERIAL;
 // helper for message limits
 #define kMessageMax 50
 
-BLEService bleService(kTargetServiceUUID);
+#define BLE_UUID(val) ("bf88b656-" val "-4a61-86e0-69840a842c4f")
+
+BLEService bleService(BLE_UUID("0000"));
+BLEIntCharacteristic statusCharacteristic(BLE_UUID("0001"), BLERead | BLENotify); // 0 idle, 1 recording, 2 error
+BLEIntCharacteristic commandCharacteristic(BLE_UUID("0002"), BLEWrite); // 1 to start recording, 2 to stop recording
+BLEStringCharacteristic fileNameCharacteristic(BLE_UUID("0003"), BLEWrite, kMessageMax);
+BLEUnsignedIntCharacteristic rtcTimeCharacteristic(BLE_UUID("0004"), BLEWrite);
+
 BLEStringCharacteristic bleCharacteristic00(kCharacteristicUUID00, BLERead | BLENotify, kMessageMax);
 BLEStringCharacteristic bleCharacteristic01(kCharacteristicUUID01, BLERead | BLENotify, kMessageMax);
 BLEStringCharacteristic bleCharacteristic02(kCharacteristicUUID02, BLERead | BLENotify, kMessageMax);
@@ -479,6 +487,82 @@ BLEStringCharacteristic bleCharacteristic49(kCharacteristicUUID49, BLERead | BLE
 
 int numBLECharacteristics = 0;
 char bleCharacteristicsValues[kMaxCharacteristics][kMessageMax];
+
+
+
+void ConnectHandler(BLEDevice central) {
+    // central connected event handler
+    Serial.print("Connected event, central: ");
+    Serial.println(central.address());
+    BLE.advertise();
+}
+
+void DisconnectHandler(BLEDevice central) {
+    // central disconnected event handler
+    Serial.print("Disconnected event, central: ");
+    Serial.println(central.address());
+    BLE.advertise();
+}
+
+void onTimeWritten(BLEDevice central, BLECharacteristic characteristic) {
+    uint32_t epoch_rcv;
+    characteristic.readValue(epoch_rcv);
+    myRTC.setEpoch(epoch_rcv); //Manually set RTC
+    lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
+    SerialPrint(F("BLE timestamp recieved! Value: "));
+    SerialPrintf2("%u\n", epoch_rcv)
+}
+
+void onCommandWritten(BLEDevice central, BLECharacteristic characteristic) {
+    if (settings.enableSD && online.microSD) {
+//        //Close log files before showing sdCardMenu
+//        if (online.dataLogging == true) {
+//            sensorDataFile.sync();
+//            updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+//            sensorDataFile.close();
+//        }
+//        if (online.serialLogging == true) {
+//            serialDataFile.sync();
+//            updateDataFileAccess(&serialDataFile); // Update the file access time & date
+//            serialDataFile.close();
+//        }
+
+        int32_t command_value;
+        characteristic.readValue(command_value);
+
+        SerialPrint(F("BLE Command recieved! Value: "));
+        SerialPrintf2("%i\n", command_value)
+
+        switch (command_value) {
+            case 1:
+                SerialPrint(F("Recording start..."));
+                if (online.dataLogging == false) {
+                    String string = fileNameCharacteristic.value();
+                    if (string == "") {
+                        string = "dataLog";
+                    }
+                    strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, string.c_str()));
+                    beginDataLogging(); //180ms
+                    if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
+                    statusCharacteristic.writeValue(online.dataLogging ? 1 : 2);
+                }
+                break;
+            case 2:
+                SerialPrint(F("Recording stop..."));
+                if (online.dataLogging == true) {
+                    sensorDataFile.sync();
+                    updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+                    sensorDataFile.close();
+                    online.dataLogging = false;
+                    statusCharacteristic.writeValue(0);
+                }
+                break;
+            default:
+                SerialPrint(F("Unknown command!"));
+                break;
+        }
+    }
+}
 
 void setup() {
     //If 3.3V rail drops below 3V, system will power down and maintain RTC
@@ -538,7 +622,7 @@ void setup() {
     Serial.begin(settings.serialTerminalBaudRate);
 
     SerialPrintf3("Artemis OpenLog v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-    SerialPrintf2("Size: %ld\r\n", sizeof(outputDataBin.number.stamp)+
+    SerialPrintf2("Msg size: %ld\r\n", sizeof(outputDataBin.number.stamp)+
             sizeof(outputDataBin.number.micros)+
             sizeof(outputDataBin.number.Q1)+
             sizeof(outputDataBin.number.Q2)+
@@ -583,7 +667,7 @@ void setup() {
             bleCharacteristicsValues[i][0] = 0; //Clear the BLE characteristics values
     }
 
-    beginDataLogging(); //180ms
+//    beginDataLogging(); //180ms
     lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
 
     serialTimestamp[0] = '\0'; // Empty the serial timestamp buffer
@@ -646,116 +730,18 @@ void setup() {
             BLE.setDeviceName(kTargetServiceName);
             BLE.setAdvertisedService(bleService); //Add the service UUID
 
-            printDebug("Adding " + (String) numBLECharacteristics + " BLE Characteristics\r\n");
-            for (int i = 0; i < numBLECharacteristics; i++) //Add the characteristics
-            {
-                if (i == 0) bleService.addCharacteristic(bleCharacteristic00);
-                if (i == 1) bleService.addCharacteristic(bleCharacteristic01);
-                if (i == 2) bleService.addCharacteristic(bleCharacteristic02);
-                if (i == 3) bleService.addCharacteristic(bleCharacteristic03);
-                if (i == 4) bleService.addCharacteristic(bleCharacteristic04);
-                if (i == 5) bleService.addCharacteristic(bleCharacteristic05);
-                if (i == 6) bleService.addCharacteristic(bleCharacteristic06);
-                if (i == 7) bleService.addCharacteristic(bleCharacteristic07);
-                if (i == 8) bleService.addCharacteristic(bleCharacteristic08);
-                if (i == 9) bleService.addCharacteristic(bleCharacteristic09);
-                if (i == 10) bleService.addCharacteristic(bleCharacteristic10);
-                if (i == 11) bleService.addCharacteristic(bleCharacteristic11);
-                if (i == 12) bleService.addCharacteristic(bleCharacteristic12);
-                if (i == 13) bleService.addCharacteristic(bleCharacteristic13);
-                if (i == 14) bleService.addCharacteristic(bleCharacteristic14);
-                if (i == 15) bleService.addCharacteristic(bleCharacteristic15);
-                if (i == 16) bleService.addCharacteristic(bleCharacteristic16);
-                if (i == 17) bleService.addCharacteristic(bleCharacteristic17);
-                if (i == 18) bleService.addCharacteristic(bleCharacteristic18);
-                if (i == 19) bleService.addCharacteristic(bleCharacteristic19);
-                if (i == 20) bleService.addCharacteristic(bleCharacteristic20);
-                if (i == 21) bleService.addCharacteristic(bleCharacteristic21);
-                if (i == 22) bleService.addCharacteristic(bleCharacteristic22);
-                if (i == 23) bleService.addCharacteristic(bleCharacteristic23);
-                if (i == 24) bleService.addCharacteristic(bleCharacteristic24);
-                if (i == 25) bleService.addCharacteristic(bleCharacteristic25);
-                if (i == 26) bleService.addCharacteristic(bleCharacteristic26);
-                if (i == 27) bleService.addCharacteristic(bleCharacteristic27);
-                if (i == 28) bleService.addCharacteristic(bleCharacteristic28);
-                if (i == 29) bleService.addCharacteristic(bleCharacteristic29);
-                if (i == 30) bleService.addCharacteristic(bleCharacteristic30);
-                if (i == 31) bleService.addCharacteristic(bleCharacteristic31);
-                if (i == 32) bleService.addCharacteristic(bleCharacteristic32);
-                if (i == 33) bleService.addCharacteristic(bleCharacteristic33);
-                if (i == 34) bleService.addCharacteristic(bleCharacteristic34);
-                if (i == 35) bleService.addCharacteristic(bleCharacteristic35);
-                if (i == 36) bleService.addCharacteristic(bleCharacteristic36);
-                if (i == 37) bleService.addCharacteristic(bleCharacteristic37);
-                if (i == 38) bleService.addCharacteristic(bleCharacteristic38);
-                if (i == 39) bleService.addCharacteristic(bleCharacteristic39);
-                if (i == 40) bleService.addCharacteristic(bleCharacteristic40);
-                if (i == 41) bleService.addCharacteristic(bleCharacteristic41);
-                if (i == 42) bleService.addCharacteristic(bleCharacteristic42);
-                if (i == 43) bleService.addCharacteristic(bleCharacteristic43);
-                if (i == 44) bleService.addCharacteristic(bleCharacteristic44);
-                if (i == 45) bleService.addCharacteristic(bleCharacteristic45);
-                if (i == 46) bleService.addCharacteristic(bleCharacteristic46);
-                if (i == 47) bleService.addCharacteristic(bleCharacteristic47);
-                if (i == 48) bleService.addCharacteristic(bleCharacteristic48);
-                if (i == 49) bleService.addCharacteristic(bleCharacteristic49);
-            }
+            bleService.addCharacteristic(statusCharacteristic);
+            bleService.addCharacteristic(commandCharacteristic);
+            bleService.addCharacteristic(fileNameCharacteristic);
+            bleService.addCharacteristic(rtcTimeCharacteristic);
+
+            commandCharacteristic.setEventHandler(BLEWritten, onCommandWritten);
+            rtcTimeCharacteristic.setEventHandler(BLEWritten, onTimeWritten);
+            BLE.setEventHandler(BLEConnected, ConnectHandler);
+            BLE.setEventHandler(BLEDisconnected, DisconnectHandler);
 
             BLE.addService(bleService); //Add the service
 
-            for (int i = 0; i < numBLECharacteristics; i++) //Set the initial values to "NULL"
-            {
-                if (i == 0) bleCharacteristic00.setValue("NULL");
-                if (i == 1) bleCharacteristic01.setValue("NULL");
-                if (i == 2) bleCharacteristic02.setValue("NULL");
-                if (i == 3) bleCharacteristic03.setValue("NULL");
-                if (i == 4) bleCharacteristic04.setValue("NULL");
-                if (i == 5) bleCharacteristic05.setValue("NULL");
-                if (i == 6) bleCharacteristic06.setValue("NULL");
-                if (i == 7) bleCharacteristic07.setValue("NULL");
-                if (i == 8) bleCharacteristic08.setValue("NULL");
-                if (i == 9) bleCharacteristic09.setValue("NULL");
-                if (i == 10) bleCharacteristic10.setValue("NULL");
-                if (i == 11) bleCharacteristic11.setValue("NULL");
-                if (i == 12) bleCharacteristic12.setValue("NULL");
-                if (i == 13) bleCharacteristic13.setValue("NULL");
-                if (i == 14) bleCharacteristic14.setValue("NULL");
-                if (i == 15) bleCharacteristic15.setValue("NULL");
-                if (i == 16) bleCharacteristic16.setValue("NULL");
-                if (i == 17) bleCharacteristic17.setValue("NULL");
-                if (i == 18) bleCharacteristic18.setValue("NULL");
-                if (i == 19) bleCharacteristic19.setValue("NULL");
-                if (i == 20) bleCharacteristic20.setValue("NULL");
-                if (i == 21) bleCharacteristic21.setValue("NULL");
-                if (i == 22) bleCharacteristic22.setValue("NULL");
-                if (i == 23) bleCharacteristic23.setValue("NULL");
-                if (i == 24) bleCharacteristic24.setValue("NULL");
-                if (i == 25) bleCharacteristic25.setValue("NULL");
-                if (i == 26) bleCharacteristic26.setValue("NULL");
-                if (i == 27) bleCharacteristic27.setValue("NULL");
-                if (i == 28) bleCharacteristic28.setValue("NULL");
-                if (i == 29) bleCharacteristic29.setValue("NULL");
-                if (i == 30) bleCharacteristic30.setValue("NULL");
-                if (i == 31) bleCharacteristic31.setValue("NULL");
-                if (i == 32) bleCharacteristic32.setValue("NULL");
-                if (i == 33) bleCharacteristic33.setValue("NULL");
-                if (i == 34) bleCharacteristic34.setValue("NULL");
-                if (i == 35) bleCharacteristic35.setValue("NULL");
-                if (i == 36) bleCharacteristic36.setValue("NULL");
-                if (i == 37) bleCharacteristic37.setValue("NULL");
-                if (i == 38) bleCharacteristic38.setValue("NULL");
-                if (i == 39) bleCharacteristic39.setValue("NULL");
-                if (i == 40) bleCharacteristic40.setValue("NULL");
-                if (i == 41) bleCharacteristic41.setValue("NULL");
-                if (i == 42) bleCharacteristic42.setValue("NULL");
-                if (i == 43) bleCharacteristic43.setValue("NULL");
-                if (i == 44) bleCharacteristic44.setValue("NULL");
-                if (i == 45) bleCharacteristic45.setValue("NULL");
-                if (i == 46) bleCharacteristic46.setValue("NULL");
-                if (i == 47) bleCharacteristic47.setValue("NULL");
-                if (i == 48) bleCharacteristic48.setValue("NULL");
-                if (i == 49) bleCharacteristic49.setValue("NULL");
-            }
             BLE.advertise(); //Start advertising
             usingBLE = true;
         }
@@ -773,6 +759,8 @@ void setup() {
     //first present the user with the config menu in case they need to change something
     if (checkIfItIsTimeToSleep())
         menuMain();
+
+    SerialPrintln(F("Setup complete!"));
 }
 
 void loop() {
@@ -864,6 +852,8 @@ void loop() {
         }
     }
 
+    takeReading = true;
+
     //Is it time to get new data?
     if ((settings.logMaxRate == true) || (takeReading == true)) {
         takeReading = false;
@@ -916,7 +906,8 @@ void loop() {
             Serial1.print(outputData); //Print to TX pin
 
         //Record to SD
-        if (settings.logData == true) {
+        if (settings.logData == true && newImuDataFlag) {
+            newImuDataFlag = false;
             if (settings.enableSD && online.microSD) {
                 digitalWrite(PIN_STAT_LED, HIGH);
                 sensorDataFile.write(&outputDataBin.number.stamp, sizeof(outputDataBin.number.stamp));
@@ -943,12 +934,12 @@ void loop() {
 //                }
 
                 //Force sync every 500ms
-                if (bestMillis() - lastDataLogSyncTime > 500) {
-                    lastDataLogSyncTime = bestMillis();
-                    sensorDataFile.sync();
-                    if (settings.frequentFileAccessTimestamps == true)
-                        updateDataFileAccess(&sensorDataFile); // Update the file access time & date
-                }
+//                if (bestMillis() - lastDataLogSyncTime > 500) {
+//                    lastDataLogSyncTime = bestMillis();
+//                    sensorDataFile.sync();
+//                    if (settings.frequentFileAccessTimestamps == true)
+//                        updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+//                }
 
                 //Check if it is time to open a new log file
                 uint64_t secsSinceLastFileNameChange = rtcMillis() - lastSDFileNameChangeTime; // Calculate how long we have been logging for
