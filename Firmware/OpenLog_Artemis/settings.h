@@ -345,7 +345,7 @@ struct struct_settings {
   int nextDataLogNumber = 1;
   //uint32_t: Largest is 4,294,967,295 or 4,294s or 71 minutes between readings.
   //uint64_t: Largest is 9,223,372,036,854,775,807 or 9,223,372,036,854s or 292,471 years between readings.
-  uint64_t usBetweenReadings = 100000ULL; //Default to 100,000us = 100ms = 10 readings per second.
+  uint64_t usBetweenReadings = 2500ULL; //Default to 100,000us = 100ms = 10 readings per second.
   //100,000 / 1000 = 100ms. 1 / 100ms = 10Hz
   //recordPerSecond (Hz) = 1 / ((usBetweenReadings / 1000UL) / 1000UL)
   //recordPerSecond (Hz) = 1,000,000 / usBetweenReadings
@@ -353,21 +353,21 @@ struct struct_settings {
   bool enableRTC = true;
   bool enableIMU = true;
   bool enableSD = true;
-  bool enableTerminalOutput = true;
-  bool logDate = true;
+  bool enableTerminalOutput = false;
+  bool logDate = false;
   bool logTime = true;
   bool logData = true;
-  bool logSerial = true;
+  bool logSerial = false;
   bool logIMUAccel = true;
   bool logIMUGyro = true;
   bool logIMUMag = true;
   bool logIMUTemp = true;
   bool logRTC = true;
-  bool logHertz = true;
+  bool logHertz = false;
   bool correctForDST = false;
   bool americanDateStyle = true;
   bool hour24Style = true;
-  int  serialTerminalBaudRate = 115200;
+  int  serialTerminalBaudRate = 500000;
   int  serialLogBaudRate = 9600;
   bool showHelperText = true;
   bool logA11 = false;
@@ -404,7 +404,7 @@ struct struct_settings {
   int imuAccDLPFBW = 7; // IMU accelerometer DLPF bandwidth - default to acc_d473bw_n499bw (ICM_20948_ACCEL_CONFIG_DLPCFG_e)
   int imuGyroFSS = 0; // IMU gyro full scale - default to 250 degrees per second (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
   int imuGyroDLPFBW = 7; // IMU gyro DLPF bandwidth - default to gyr_d361bw4_n376bw5 (ICM_20948_GYRO_CONFIG_1_DLPCFG_e)
-  bool logMicroseconds = false; // Log micros()
+  bool logMicroseconds = true; // Log micros()
   bool useTxRxPinsForTerminal = false; // If true, the terminal is echo'd to the Tx and Rx pins. Note: setting this to true will _permanently_ disable serial logging and analog input on those pins!
   bool timestampSerial = false; // If true, the RTC time will be added to the serial log file when timeStampToken is received
   uint8_t timeStampToken = 0x0A; // Add RTC time to the serial log when this token is received. Default to Line Feed (0x0A). Suggested by @DennisMelamed in Issue #63
@@ -415,10 +415,10 @@ struct struct_settings {
   int slowLoggingStartMOD = 1260; // Start slow logging at this many Minutes Of Day. Default to 21:00
   int slowLoggingStopMOD = 420; // Stop slow logging at this many Minutes Of Day. Default to 07:00
   bool resetOnZeroDeviceCount = false; // A work-around for I2C bus crashes. Enable this via the debug menu.
-  bool imuUseDMP = false; // If true, enable the DMP
+  bool imuUseDMP = true; // If true, enable the DMP
   bool imuLogDMPQuat6 = true; // If true, log INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR (Quat6)
   bool imuLogDMPQuat9 = false; // If true, log INV_ICM20948_SENSOR_ROTATION_VECTOR (Quat9 + Heading Accuracy)
-  bool imuLogDMPAccel = false; // If true, log INV_ICM20948_SENSOR_RAW_ACCELEROMETER
+  bool imuLogDMPAccel = true; // If true, log INV_ICM20948_SENSOR_RAW_ACCELEROMETER
   bool imuLogDMPGyro = false; // If true, log INV_ICM20948_SENSOR_RAW_GYROSCOPE
   bool imuLogDMPCpass = false; // If true, log INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED
   unsigned long minimumAwakeTimeMillis = 0; // Set to greater than zero to keep the Artemis awake for this long between sleeps
