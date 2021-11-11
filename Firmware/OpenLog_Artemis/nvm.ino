@@ -3,41 +3,41 @@ void loadSettings()
   //First load any settings from NVM
   //After, we'll load settings from config file if available
   //We'll then re-record settings so that the settings from the file over-rides internal NVM settings
-
-  //Check to see if EEPROM is blank
-  uint32_t testRead = 0;
-  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
-  {
-    SerialPrintln(F("EEPROM is blank. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-  }
-
-  //Check that the current settings struct size matches what is stored in EEPROM
-  //Misalignment happens when we add a new feature or setting
-  int tempSize = 0;
-  EEPROM.get(0, tempSize); //Load the sizeOfSettings
-  if (tempSize != sizeof(settings))
-  {
-    SerialPrintln(F("Settings wrong size. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-  }
-
-  //Check that the olaIdentifier is correct
-  //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
-  int tempIdentifier = 0;
-  EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
-  if (tempIdentifier != OLA_IDENTIFIER)
-  {
-    SerialPrintln(F("Settings are not valid for this variant of the OLA. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-  }
-
-  //Read current settings
-  EEPROM.get(0, settings);
+//
+//  //Check to see if EEPROM is blank
+//  uint32_t testRead = 0;
+//  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
+//  {
+//    SerialPrintln(F("EEPROM is blank. Default settings applied"));
+//    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+//  }
+//
+//  //Check that the current settings struct size matches what is stored in EEPROM
+//  //Misalignment happens when we add a new feature or setting
+//  int tempSize = 0;
+//  EEPROM.get(0, tempSize); //Load the sizeOfSettings
+//  if (tempSize != sizeof(settings))
+//  {
+//    SerialPrintln(F("Settings wrong size. Default settings applied"));
+//    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+//  }
+//
+//  //Check that the olaIdentifier is correct
+//  //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
+//  int tempIdentifier = 0;
+//  EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
+//  if (tempIdentifier != OLA_IDENTIFIER)
+//  {
+//    SerialPrintln(F("Settings are not valid for this variant of the OLA. Default settings applied"));
+//    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+//  }
+//
+//  //Read current settings
+//  EEPROM.get(0, settings);
 
   loadSystemSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
-  //Record these new settings to EEPROM and config file to be sure they are the same
-  //(do this even if loadSystemSettingsFromFile returned false)
+//  //Record these new settings to EEPROM and config file to be sure they are the same
+//  //(do this even if loadSystemSettingsFromFile returned false)
   recordSystemSettings();
 }
 
@@ -313,164 +313,164 @@ bool parseLine(char* str) {
     settings.nextSerialLogNumber = d;
   else if (strcmp(settingName, "nextDataLogNumber") == 0)
     settings.nextDataLogNumber = d;
-  else if (strcmp(settingName, "usBetweenReadings") == 0)
-  {
-    settings.usBetweenReadings = d;
-    //printDebug(F("Read usBetweenReadings from SD card: "));
-    //printDebug(String(d));
-    //printDebug(F("\r\n"));
-  }
-  else if (strcmp(settingName, "logMaxRate") == 0)
-    settings.logMaxRate = d;
-  else if (strcmp(settingName, "enableRTC") == 0)
-    settings.enableRTC = d;
-  else if (strcmp(settingName, "enableIMU") == 0)
-    settings.enableIMU = d;
-  else if (strcmp(settingName, "enableSD") == 0)
-    settings.enableSD = d;
-  else if (strcmp(settingName, "enableTerminalOutput") == 0)
-    settings.enableTerminalOutput = d;
-  else if (strcmp(settingName, "logDate") == 0)
-    settings.logDate = d;
-  else if (strcmp(settingName, "logTime") == 0)
-    settings.logTime = d;
-  else if (strcmp(settingName, "logData") == 0)
-    settings.logData = d;
-  else if (strcmp(settingName, "logSerial") == 0)
-    settings.logSerial = d;
-  else if (strcmp(settingName, "logIMUAccel") == 0)
-    settings.logIMUAccel = d;
-  else if (strcmp(settingName, "logIMUGyro") == 0)
-    settings.logIMUGyro = d;
-  else if (strcmp(settingName, "logIMUMag") == 0)
-    settings.logIMUMag = d;
-  else if (strcmp(settingName, "logIMUTemp") == 0)
-    settings.logIMUTemp = d;
-  else if (strcmp(settingName, "logRTC") == 0)
-    settings.logRTC = d;
-  else if (strcmp(settingName, "logHertz") == 0)
-    settings.logHertz = d;
-  else if (strcmp(settingName, "correctForDST") == 0)
-    settings.correctForDST = d;
-  else if (strcmp(settingName, "americanDateStyle") == 0)
-    settings.americanDateStyle = d;
-  else if (strcmp(settingName, "hour24Style") == 0)
-    settings.hour24Style = d;
-  else if (strcmp(settingName, "serialTerminalBaudRate") == 0)
-    settings.serialTerminalBaudRate = d;
-  else if (strcmp(settingName, "serialLogBaudRate") == 0)
-    settings.serialLogBaudRate = d;
-  else if (strcmp(settingName, "showHelperText") == 0)
-    settings.showHelperText = d;
-  else if (strcmp(settingName, "logA11") == 0)
-    settings.logA11 = d;
-  else if (strcmp(settingName, "logA12") == 0)
-    settings.logA12 = d;
-  else if (strcmp(settingName, "logA13") == 0)
-    settings.logA13 = d;
-  else if (strcmp(settingName, "logA32") == 0)
-    settings.logA32 = d;
-  else if (strcmp(settingName, "logAnalogVoltages") == 0)
-    settings.logAnalogVoltages = d;
-  else if (strcmp(settingName, "localUTCOffset") == 0)
-    settings.localUTCOffset = d;
-  else if (strcmp(settingName, "printDebugMessages") == 0)
-    settings.printDebugMessages = d;
-  else if (strcmp(settingName, "powerDownQwiicBusBetweenReads") == 0)
-    settings.powerDownQwiicBusBetweenReads = d;
-  else if (strcmp(settingName, "qwiicBusMaxSpeed") == 0)
-    settings.qwiicBusMaxSpeed = d;
-  else if (strcmp(settingName, "qwiicBusPowerUpDelayMs") == 0)
-    settings.qwiicBusPowerUpDelayMs = d;
-  else if (strcmp(settingName, "printMeasurementCount") == 0)
-    settings.printMeasurementCount = d;
-  else if (strcmp(settingName, "enablePwrLedDuringSleep") == 0)
-    settings.enablePwrLedDuringSleep = d;
-  else if (strcmp(settingName, "logVIN") == 0)
-    settings.logVIN = d;
-  else if (strcmp(settingName, "openNewLogFilesAfter") == 0)
-    settings.openNewLogFilesAfter = d;
-  else if (strcmp(settingName, "vinCorrectionFactor") == 0)
-    settings.vinCorrectionFactor = d;
-  else if (strcmp(settingName, "useGPIO32ForStopLogging") == 0)
-    settings.useGPIO32ForStopLogging = d;
-  else if (strcmp(settingName, "qwiicBusPullUps") == 0)
-    settings.qwiicBusPullUps = d;
-  else if (strcmp(settingName, "outputSerial") == 0)
-    settings.outputSerial = d;
-  else if (strcmp(settingName, "zmodemStartDelay") == 0)
-    settings.zmodemStartDelay = d;
-  else if (strcmp(settingName, "enableLowBatteryDetection") == 0)
-    settings.enableLowBatteryDetection = d;
-  else if (strcmp(settingName, "lowBatteryThreshold") == 0)
-    settings.lowBatteryThreshold = d;
-  else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
-    settings.frequentFileAccessTimestamps = d;
-  else if (strcmp(settingName, "useGPIO11ForTrigger") == 0)
-    settings.useGPIO11ForTrigger = d;
-  else if (strcmp(settingName, "fallingEdgeTrigger") == 0)
-    settings.fallingEdgeTrigger = d;
-  else if (strcmp(settingName, "imuAccDLPF") == 0)
-    settings.imuAccDLPF = d;
-  else if (strcmp(settingName, "imuGyroDLPF") == 0)
-    settings.imuGyroDLPF = d;
-  else if (strcmp(settingName, "imuAccFSS") == 0)
-    settings.imuAccFSS = d;
-  else if (strcmp(settingName, "imuAccDLPFBW") == 0)
-    settings.imuAccDLPFBW = d;
-  else if (strcmp(settingName, "imuGyroFSS") == 0)
-    settings.imuGyroFSS = d;
-  else if (strcmp(settingName, "imuGyroDLPFBW") == 0)
-    settings.imuGyroDLPFBW = d;
-  else if (strcmp(settingName, "logMicroseconds") == 0)
-    settings.logMicroseconds = d;
-  else if (strcmp(settingName, "useTxRxPinsForTerminal") == 0)
-    settings.useTxRxPinsForTerminal = d;
-  else if (strcmp(settingName, "timestampSerial") == 0)
-    settings.timestampSerial = d;
-  else if (strcmp(settingName, "timeStampToken") == 0)
-    settings.timeStampToken = d;
-  else if (strcmp(settingName, "useGPIO11ForFastSlowLogging") == 0)
-    settings.useGPIO11ForFastSlowLogging = d;
-  else if (strcmp(settingName, "slowLoggingWhenPin11Is") == 0)
-    settings.slowLoggingWhenPin11Is = d;
-  else if (strcmp(settingName, "useRTCForFastSlowLogging") == 0)
-    settings.useRTCForFastSlowLogging = d;
-  else if (strcmp(settingName, "slowLoggingIntervalSeconds") == 0)
-    settings.slowLoggingIntervalSeconds = d;
-  else if (strcmp(settingName, "slowLoggingStartMOD") == 0)
-    settings.slowLoggingStartMOD = d;
-  else if (strcmp(settingName, "slowLoggingStopMOD") == 0)
-    settings.slowLoggingStopMOD = d;
-  else if (strcmp(settingName, "resetOnZeroDeviceCount") == 0)
-    settings.resetOnZeroDeviceCount = d;
-  else if (strcmp(settingName, "imuUseDMP") == 0)
-    settings.imuUseDMP = d;
-  else if (strcmp(settingName, "imuLogDMPQuat6") == 0)
-    settings.imuLogDMPQuat6 = d;
-  else if (strcmp(settingName, "imuLogDMPQuat9") == 0)
-    settings.imuLogDMPQuat9 = d;
-  else if (strcmp(settingName, "imuLogDMPAccel") == 0)
-    settings.imuLogDMPAccel = d;
-  else if (strcmp(settingName, "imuLogDMPGyro") == 0)
-    settings.imuLogDMPGyro = d;
-  else if (strcmp(settingName, "imuLogDMPCpass") == 0)
-    settings.imuLogDMPCpass = d;
-  else if (strcmp(settingName, "minimumAwakeTimeMillis") == 0)
-    settings.minimumAwakeTimeMillis = d;
-  else if (strcmp(settingName, "identifyBioSensorHubs") == 0)
-    settings.identifyBioSensorHubs = d;
-  else if (strcmp(settingName, "serialTxRxDuringSleep") == 0)
-    settings.serialTxRxDuringSleep = d;
-  else if (strcmp(settingName, "printGNSSDebugMessages") == 0)
-    settings.printGNSSDebugMessages = d;
-  else if (strcmp(settingName, "useBLE") == 0)
-    settings.useBLE = d;
-  else
-    {
-      SerialPrintf2("Unknown setting %s. Ignoring...\r\n", settingName);
-      return(false);
-    }
+//  else if (strcmp(settingName, "usBetweenReadings") == 0)
+//  {
+//    settings.usBetweenReadings = d;
+//    //printDebug(F("Read usBetweenReadings from SD card: "));
+//    //printDebug(String(d));
+//    //printDebug(F("\r\n"));
+//  }
+//  else if (strcmp(settingName, "logMaxRate") == 0)
+//    settings.logMaxRate = d;
+//  else if (strcmp(settingName, "enableRTC") == 0)
+//    settings.enableRTC = d;
+//  else if (strcmp(settingName, "enableIMU") == 0)
+//    settings.enableIMU = d;
+//  else if (strcmp(settingName, "enableSD") == 0)
+//    settings.enableSD = d;
+//  else if (strcmp(settingName, "enableTerminalOutput") == 0)
+//    settings.enableTerminalOutput = d;
+//  else if (strcmp(settingName, "logDate") == 0)
+//    settings.logDate = d;
+//  else if (strcmp(settingName, "logTime") == 0)
+//    settings.logTime = d;
+//  else if (strcmp(settingName, "logData") == 0)
+//    settings.logData = d;
+//  else if (strcmp(settingName, "logSerial") == 0)
+//    settings.logSerial = d;
+//  else if (strcmp(settingName, "logIMUAccel") == 0)
+//    settings.logIMUAccel = d;
+//  else if (strcmp(settingName, "logIMUGyro") == 0)
+//    settings.logIMUGyro = d;
+//  else if (strcmp(settingName, "logIMUMag") == 0)
+//    settings.logIMUMag = d;
+//  else if (strcmp(settingName, "logIMUTemp") == 0)
+//    settings.logIMUTemp = d;
+//  else if (strcmp(settingName, "logRTC") == 0)
+//    settings.logRTC = d;
+//  else if (strcmp(settingName, "logHertz") == 0)
+//    settings.logHertz = d;
+//  else if (strcmp(settingName, "correctForDST") == 0)
+//    settings.correctForDST = d;
+//  else if (strcmp(settingName, "americanDateStyle") == 0)
+//    settings.americanDateStyle = d;
+//  else if (strcmp(settingName, "hour24Style") == 0)
+//    settings.hour24Style = d;
+//  else if (strcmp(settingName, "serialTerminalBaudRate") == 0)
+//    settings.serialTerminalBaudRate = d;
+//  else if (strcmp(settingName, "serialLogBaudRate") == 0)
+//    settings.serialLogBaudRate = d;
+//  else if (strcmp(settingName, "showHelperText") == 0)
+//    settings.showHelperText = d;
+//  else if (strcmp(settingName, "logA11") == 0)
+//    settings.logA11 = d;
+//  else if (strcmp(settingName, "logA12") == 0)
+//    settings.logA12 = d;
+//  else if (strcmp(settingName, "logA13") == 0)
+//    settings.logA13 = d;
+//  else if (strcmp(settingName, "logA32") == 0)
+//    settings.logA32 = d;
+//  else if (strcmp(settingName, "logAnalogVoltages") == 0)
+//    settings.logAnalogVoltages = d;
+//  else if (strcmp(settingName, "localUTCOffset") == 0)
+//    settings.localUTCOffset = d;
+//  else if (strcmp(settingName, "printDebugMessages") == 0)
+//    settings.printDebugMessages = d;
+//  else if (strcmp(settingName, "powerDownQwiicBusBetweenReads") == 0)
+//    settings.powerDownQwiicBusBetweenReads = d;
+//  else if (strcmp(settingName, "qwiicBusMaxSpeed") == 0)
+//    settings.qwiicBusMaxSpeed = d;
+//  else if (strcmp(settingName, "qwiicBusPowerUpDelayMs") == 0)
+//    settings.qwiicBusPowerUpDelayMs = d;
+//  else if (strcmp(settingName, "printMeasurementCount") == 0)
+//    settings.printMeasurementCount = d;
+//  else if (strcmp(settingName, "enablePwrLedDuringSleep") == 0)
+//    settings.enablePwrLedDuringSleep = d;
+//  else if (strcmp(settingName, "logVIN") == 0)
+//    settings.logVIN = d;
+//  else if (strcmp(settingName, "openNewLogFilesAfter") == 0)
+//    settings.openNewLogFilesAfter = d;
+//  else if (strcmp(settingName, "vinCorrectionFactor") == 0)
+//    settings.vinCorrectionFactor = d;
+//  else if (strcmp(settingName, "useGPIO32ForStopLogging") == 0)
+//    settings.useGPIO32ForStopLogging = d;
+//  else if (strcmp(settingName, "qwiicBusPullUps") == 0)
+//    settings.qwiicBusPullUps = d;
+//  else if (strcmp(settingName, "outputSerial") == 0)
+//    settings.outputSerial = d;
+//  else if (strcmp(settingName, "zmodemStartDelay") == 0)
+//    settings.zmodemStartDelay = d;
+//  else if (strcmp(settingName, "enableLowBatteryDetection") == 0)
+//    settings.enableLowBatteryDetection = d;
+//  else if (strcmp(settingName, "lowBatteryThreshold") == 0)
+//    settings.lowBatteryThreshold = d;
+//  else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
+//    settings.frequentFileAccessTimestamps = d;
+//  else if (strcmp(settingName, "useGPIO11ForTrigger") == 0)
+//    settings.useGPIO11ForTrigger = d;
+//  else if (strcmp(settingName, "fallingEdgeTrigger") == 0)
+//    settings.fallingEdgeTrigger = d;
+//  else if (strcmp(settingName, "imuAccDLPF") == 0)
+//    settings.imuAccDLPF = d;
+//  else if (strcmp(settingName, "imuGyroDLPF") == 0)
+//    settings.imuGyroDLPF = d;
+//  else if (strcmp(settingName, "imuAccFSS") == 0)
+//    settings.imuAccFSS = d;
+//  else if (strcmp(settingName, "imuAccDLPFBW") == 0)
+//    settings.imuAccDLPFBW = d;
+//  else if (strcmp(settingName, "imuGyroFSS") == 0)
+//    settings.imuGyroFSS = d;
+//  else if (strcmp(settingName, "imuGyroDLPFBW") == 0)
+//    settings.imuGyroDLPFBW = d;
+//  else if (strcmp(settingName, "logMicroseconds") == 0)
+//    settings.logMicroseconds = d;
+//  else if (strcmp(settingName, "useTxRxPinsForTerminal") == 0)
+//    settings.useTxRxPinsForTerminal = d;
+//  else if (strcmp(settingName, "timestampSerial") == 0)
+//    settings.timestampSerial = d;
+//  else if (strcmp(settingName, "timeStampToken") == 0)
+//    settings.timeStampToken = d;
+//  else if (strcmp(settingName, "useGPIO11ForFastSlowLogging") == 0)
+//    settings.useGPIO11ForFastSlowLogging = d;
+//  else if (strcmp(settingName, "slowLoggingWhenPin11Is") == 0)
+//    settings.slowLoggingWhenPin11Is = d;
+//  else if (strcmp(settingName, "useRTCForFastSlowLogging") == 0)
+//    settings.useRTCForFastSlowLogging = d;
+//  else if (strcmp(settingName, "slowLoggingIntervalSeconds") == 0)
+//    settings.slowLoggingIntervalSeconds = d;
+//  else if (strcmp(settingName, "slowLoggingStartMOD") == 0)
+//    settings.slowLoggingStartMOD = d;
+//  else if (strcmp(settingName, "slowLoggingStopMOD") == 0)
+//    settings.slowLoggingStopMOD = d;
+//  else if (strcmp(settingName, "resetOnZeroDeviceCount") == 0)
+//    settings.resetOnZeroDeviceCount = d;
+//  else if (strcmp(settingName, "imuUseDMP") == 0)
+//    settings.imuUseDMP = d;
+//  else if (strcmp(settingName, "imuLogDMPQuat6") == 0)
+//    settings.imuLogDMPQuat6 = d;
+//  else if (strcmp(settingName, "imuLogDMPQuat9") == 0)
+//    settings.imuLogDMPQuat9 = d;
+//  else if (strcmp(settingName, "imuLogDMPAccel") == 0)
+//    settings.imuLogDMPAccel = d;
+//  else if (strcmp(settingName, "imuLogDMPGyro") == 0)
+//    settings.imuLogDMPGyro = d;
+//  else if (strcmp(settingName, "imuLogDMPCpass") == 0)
+//    settings.imuLogDMPCpass = d;
+//  else if (strcmp(settingName, "minimumAwakeTimeMillis") == 0)
+//    settings.minimumAwakeTimeMillis = d;
+//  else if (strcmp(settingName, "identifyBioSensorHubs") == 0)
+//    settings.identifyBioSensorHubs = d;
+//  else if (strcmp(settingName, "serialTxRxDuringSleep") == 0)
+//    settings.serialTxRxDuringSleep = d;
+//  else if (strcmp(settingName, "printGNSSDebugMessages") == 0)
+//    settings.printGNSSDebugMessages = d;
+//  else if (strcmp(settingName, "useBLE") == 0)
+//    settings.useBLE = d;
+//  else
+//    {
+//      SerialPrintf2("Unknown setting %s. Ignoring...\r\n", settingName);
+//      return(false);
+//    }
 
   return (true);
 }
