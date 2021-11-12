@@ -382,7 +382,7 @@ struct struct_settings {
 #else
   bool powerDownQwiicBusBetweenReads = true; // For the SparkFun (red) board: default to disabling Qwiic power during sleep. (Qwiic power is always disabled during powerDown on v10 hardware.)
 #endif
-  uint32_t qwiicBusMaxSpeed = 100000; // 400kHz with no pull-ups can cause issues. Default to 100kHz. User can change to 400 if required.
+  uint32_t qwiicBusMaxSpeed = 400000; // 400kHz with no pull-ups can cause issues. Default to 100kHz. User can change to 400 if required.
   int  qwiicBusPowerUpDelayMs = 250; // This is the minimum delay between the qwiic bus power being turned on and communication with the qwiic devices being attempted
   bool printMeasurementCount = false;
   bool enablePwrLedDuringSleep = true;

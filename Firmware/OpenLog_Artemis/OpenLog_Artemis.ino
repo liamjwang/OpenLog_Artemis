@@ -562,6 +562,9 @@ void onCommandWritten(BLEDevice central, BLECharacteristic characteristic) {
                 break;
         }
     }
+    measurementCount = 0;
+    measurementStartTime = bestMillis();
+
 }
 
 void setup() {
@@ -773,127 +776,12 @@ void loop() {
     if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
         menuMain(); //Present user menu
 
-    if (settings.logSerial == true && online.serialLogging == true && settings.useTxRxPinsForTerminal == false) {
-        size_t timestampCharsLeftToWrite = strlen(serialTimestamp);
-        //SerialPrintf2("timestampCharsLeftToWrite is %d\r\n", timestampCharsLeftToWrite);
-        //SerialFlush();
-
-        if (Serial1.available() || (timestampCharsLeftToWrite > 0)) {
-            while (Serial1.available() || (timestampCharsLeftToWrite > 0)) {
-                if (timestampCharsLeftToWrite > 0) // Based on code written by @DennisMelamed in PR #70
-                {
-                    incomingBuffer[incomingBufferSpot++] = serialTimestamp[0]; // Add a timestamp character to incomingBuffer
-
-                    for (size_t i = 0; i < timestampCharsLeftToWrite; i++) {
-                        serialTimestamp[i] = serialTimestamp[i + 1]; // Shuffle the remaining chars along by one
-                    }
-
-                    timestampCharsLeftToWrite -= 1;
-                } else {
-                    incomingBuffer[incomingBufferSpot++] = Serial1.read();
-
-                    //Get the RTC timestamp if we just received the timestamp token
-                    if (settings.timestampSerial && (incomingBuffer[incomingBufferSpot - 1] == settings.timeStampToken)) {
-                        getTimeString(&serialTimestamp[2]);
-                        serialTimestamp[0] = 0x0A; // Add Line Feed at the start of the timestamp
-                        serialTimestamp[1] = '^'; // Add an up-arrow to indicate the timestamp relates to the preceeding data
-                        serialTimestamp[strlen(serialTimestamp) - 1] = 0x0A; // Change the final comma of the timestamp to a Line Feed
-                    }
-                }
-
-                if (incomingBufferSpot == sizeof(incomingBuffer)) {
-                    digitalWrite(PIN_STAT_LED, HIGH); //Toggle stat LED to indicating log recording
-                    serialDataFile.write(incomingBuffer, sizeof(incomingBuffer)); //Record the buffer to the card
-                    digitalWrite(PIN_STAT_LED, LOW);
-                    incomingBufferSpot = 0;
-                }
-                charsReceived++;
-                checkBattery();
-            }
-
-            //If we are sleeping between readings then we cannot rely on millis() as it is powered down
-            //Use RTC instead
-            lastSeriaLogSyncTime = bestMillis(); //Reset the last sync time to now
-            newSerialData = true;
-        } else if (newSerialData == true) {
-            if ((bestMillis() - lastSeriaLogSyncTime) > MAX_IDLE_TIME_MSEC) //If we haven't received any characters recently then sync log file
-            {
-                if (incomingBufferSpot > 0) {
-                    //Write the remainder of the buffer
-                    digitalWrite(PIN_STAT_LED, HIGH); //Toggle stat LED to indicating log recording
-                    serialDataFile.write(incomingBuffer, incomingBufferSpot); //Record the buffer to the card
-                    serialDataFile.sync();
-                    if (settings.frequentFileAccessTimestamps == true)
-                        updateDataFileAccess(&serialDataFile); // Update the file access time & date
-                    digitalWrite(PIN_STAT_LED, LOW);
-
-                    incomingBufferSpot = 0;
-                }
-
-                newSerialData = false;
-                lastSeriaLogSyncTime = bestMillis(); //Reset the last sync time to now
-                printDebug("Total chars received: " + (String) charsReceived + "\r\n");
-            }
-        }
-    }
-
-    //In v2.1 of the core micros() becomes corrupted during deep sleep so only test if we are not sleeping
-    if (settings.usBetweenReadings < maxUsBeforeSleep) {
-        if ((micros() - lastReadTime) >= settings.usBetweenReadings)
-            takeReading = true;
-    }
-
-    //Check for a trigger event
-    if (settings.useGPIO11ForTrigger == true) {
-        if (triggerEdgeSeen == true) {
-            takeReading = true; // If triggering is enabled and a trigger event has been seen, then take a reading.
-        } else {
-            takeReading = false; // If triggering is enabled and a trigger even has not been seen, then make sure we don't take a reading based on settings.usBetweenReadings.
-        }
-    }
-
     takeReading = true;
 
     //Is it time to get new data?
     if ((settings.logMaxRate == true) || (takeReading == true)) {
         takeReading = false;
         lastReadTime = micros();
-
-#ifdef PRINT_LAST_WRITE_TIME
-        if (settings.printDebugMessages)
-        {
-          // Print how long it has been since the last write
-          char tempTimeRev[20]; // Char array to hold to usBR (reversed order)
-          char tempTime[20]; // Char array to hold to usBR (correct order)
-          static uint64_t lastWriteTime; //Used to calculate the time since the last SD write (sleep-proof)
-          unsigned long usBR = rtcMillis() - lastWriteTime;
-          unsigned int i = 0;
-          if (usBR == 0ULL) // if usBetweenReadings is zero, set tempTime to "0"
-          {
-            tempTime[0] = '0';
-            tempTime[1] = 0;
-          }
-          else
-          {
-            while (usBR > 0)
-            {
-              tempTimeRev[i++] = (usBR % 10) + '0'; // divide by 10, convert the remainder to char
-              usBR /= 10; // divide by 10
-            }
-            unsigned int j = 0;
-            while (i > 0)
-            {
-              tempTime[j++] = tempTimeRev[--i]; // reverse the order
-              tempTime[j] = 0; // mark the end with a NULL
-            }
-          }
-
-          //printDebug("ms since last write: " + (String)tempTime + "\r\n");
-          printDebug((String)tempTime + "\r\n");
-
-          lastWriteTime = rtcMillis();
-        }
-#endif
 
         getData(); //Query all enabled sensors for data
 
@@ -910,7 +798,7 @@ void loop() {
             newImuDataFlag = false;
             if (settings.enableSD && online.microSD) {
                 digitalWrite(PIN_STAT_LED, HIGH);
-                sensorDataFile.write(&outputDataBin.number.stamp, sizeof(outputDataBin.number.stamp));
+//                sensorDataFile.write(&outputDataBin.number.stamp, sizeof(outputDataBin.number.stamp));
                 sensorDataFile.write(&outputDataBin.number.micros, sizeof(outputDataBin.number.micros));
                 sensorDataFile.write(&outputDataBin.number.Q1, sizeof(outputDataBin.number.Q1));
                 sensorDataFile.write(&outputDataBin.number.Q2, sizeof(outputDataBin.number.Q2));
@@ -918,82 +806,11 @@ void loop() {
                 sensorDataFile.write(&outputDataBin.number.X, sizeof(outputDataBin.number.X));
                 sensorDataFile.write(&outputDataBin.number.Y, sizeof(outputDataBin.number.Y));
                 sensorDataFile.write(&outputDataBin.number.Z, sizeof(outputDataBin.number.Z));
-//                uint32_t recordLength = sensorDataFile.write(outputDataBin.bytes, sizeof(MSG));
-//                if (recordLength != sizeof(MSG)) //Record the buffer to the card
-//                {
-//                    if (settings.printDebugMessages == true) {
-//                        SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
-//                    }
-//                }
-//                uint32_t recordLength = sensorDataFile.write(outputData, strlen(outputData));
-//                if (recordLength != strlen(outputData)) //Record the buffer to the card
-//                {
-//                    if (settings.printDebugMessages == true) {
-//                        SerialPrintf3("*** sensorDataFile.write data length mismatch! *** recordLength: %d, outputDataLength: %d\r\n", recordLength, strlen(outputData));
-//                    }
-//                }
-
-                //Force sync every 500ms
-//                if (bestMillis() - lastDataLogSyncTime > 500) {
-//                    lastDataLogSyncTime = bestMillis();
-//                    sensorDataFile.sync();
-//                    if (settings.frequentFileAccessTimestamps == true)
-//                        updateDataFileAccess(&sensorDataFile); // Update the file access time & date
-//                }
-
-                //Check if it is time to open a new log file
-                uint64_t secsSinceLastFileNameChange = rtcMillis() - lastSDFileNameChangeTime; // Calculate how long we have been logging for
-                secsSinceLastFileNameChange /= 1000ULL; // Convert to secs
-                if ((settings.openNewLogFilesAfter > 0) && (((unsigned long) secsSinceLastFileNameChange) >= settings.openNewLogFilesAfter)) {
-                    //Close existings files
-                    if (online.dataLogging == true) {
-                        sensorDataFile.sync();
-                        updateDataFileAccess(&sensorDataFile); // Update the file access time & date
-                        sensorDataFile.close();
-                        strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
-                        beginDataLogging(); //180ms
-                        if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
-                    }
-                    if (online.serialLogging == true) {
-                        serialDataFile.sync();
-                        updateDataFileAccess(&serialDataFile); // Update the file access time & date
-                        serialDataFile.close();
-                        strcpy(serialDataFileName, findNextAvailableLog(settings.nextSerialLogNumber, "serialLog"));
-                        beginSerialLogging();
-                    }
-
-                    lastSDFileNameChangeTime = rtcMillis(); // Record the time of the file name change
-                }
-
                 digitalWrite(PIN_STAT_LED, LOW);
             }
         }
-
-        if ((settings.useGPIO32ForStopLogging == true) && (stopLoggingSeen == true)) // Has the user pressed the stop logging button?
-        {
-            stopLogging();
-        }
-
-        triggerEdgeSeen = false; // Clear the trigger seen flag here - just in case another trigger was received while we were logging data to SD card
-
-        // Code changes here are based on suggestions by @ryanneve in Issue #46, PR #64 and Issue #83
-        if (checkIfItIsTimeToSleep()) {
-            sleepAfterRead = true;
-        }
     }
 
-    if (sleepAfterRead == true) {
-        // Check if we should stay awake because settings.minimumAwakeTimeMillis is non-zero
-        if ((settings.usBetweenReadings >= maxUsBeforeSleep) && (settings.minimumAwakeTimeMillis > 0)) {
-            // Check if we have been awake long enough (millis is reset to zero when waking from sleep)
-            // goToSleep will automatically compensate for how long we have been awake
-            if ((bestMillis() - lastAwakeTimeMillis) < settings.minimumAwakeTimeMillis)
-                return; // Too early to sleep - leave sleepAfterRead set true
-        }
-
-        sleepAfterRead = false;
-        goToSleep(howLongToSleepFor());
-    }
 }
 
 uint32_t howLongToSleepFor(void) {

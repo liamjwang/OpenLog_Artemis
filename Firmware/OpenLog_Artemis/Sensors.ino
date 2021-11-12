@@ -60,238 +60,42 @@ void updateBLECharacteristic(int *theBLECharacteristic, char *theString) {
 
 //Query each enabled sensor for its most recent data
 void getData() {
-    measurementCount++;
+//    measurementCount++;
     measurementTotal++;
 
-    char tempData[50];
-    char tempData1[16];
-    char tempData2[16];
-    char tempData3[16];
-    outputData[0] = '\0'; //Clear string contents
-    int bleCharacteristic = 0;
-
-    if (settings.logRTC) {
-        //Code written by @DennisMelamed in PR #70
-        char timeString[37];
-        getTimeString(timeString); // getTimeString is in timeStamp.ino
-        strcat(outputData, timeString);
-        updateBLECharacteristic(&bleCharacteristic, timeString);
-        outputDataBin.number.stamp = myRTC.getEpoch();
-        outputDataBin.number.micros = micros();
-    }
-
-    if (settings.logA11) {
-        unsigned int analog11 = analogRead(11);
-
-        if (settings.logAnalogVoltages == true) {
-            float voltage = analog11 * 2 / 16384.0;
-            olaftoa(voltage, tempData1, 2, sizeof(tempData1) / sizeof(char));
-            sprintf(tempData, "%s,", tempData1);
-        } else
-            sprintf(tempData, "%d,", analog11);
-
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
-    }
-
-    if (settings.logA12) {
-        unsigned int analog12 = analogRead(12);
-
-        if (settings.logAnalogVoltages == true) {
-            float voltage = analog12 * 2 / 16384.0;
-            olaftoa(voltage, tempData1, 2, sizeof(tempData1) / sizeof(char));
-            sprintf(tempData, "%s,", tempData1);
-        } else
-            sprintf(tempData, "%d,", analog12);
-
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
-    }
-
-    if (settings.logA13) {
-        unsigned int analog13 = analogRead(13);
-
-        if (settings.logAnalogVoltages == true) {
-            float voltage = analog13 * 2 / 16384.0;
-            olaftoa(voltage, tempData1, 2, sizeof(tempData1) / sizeof(char));
-            sprintf(tempData, "%s,", tempData1);
-        } else
-            sprintf(tempData, "%d,", analog13);
-
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
-    }
-
-    if (settings.logA32) {
-        unsigned int analog32 = analogRead(32);
-
-        if (settings.logAnalogVoltages == true) {
-            float voltage = analog32 * 2 / 16384.0;
-            olaftoa(voltage, tempData1, 2, sizeof(tempData1) / sizeof(char));
-            sprintf(tempData, "%s,", tempData1);
-        } else
-            sprintf(tempData, "%d,", analog32);
-
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
-    }
-
-    if (settings.logVIN) {
-        float voltage = readVIN();
-        olaftoa(voltage, tempData1, 2, sizeof(tempData1) / sizeof(char));
-        sprintf(tempData, "%s,", tempData1);
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
-    }
+//    outputDataBin.number.stamp = myRTC.getEpoch();
+    outputDataBin.number.micros = micros();
 
     if (online.IMU) {
         //printDebug("getData: online.IMU = " + (String)online.IMU + "\r\n");
 
-        if (settings.imuUseDMP == false) {
-            if (myICM.dataReady()) {
-                //printDebug("getData: myICM.dataReady = " + (String)myICM.dataReady() + "\r\n");
-
-                myICM.getAGMT(); //Update values
-
-                if (settings.logIMUAccel) {
-                    olaftoa(myICM.accX(), tempData1, 2, sizeof(tempData1) / sizeof(char));
-                    olaftoa(myICM.accY(), tempData2, 2, sizeof(tempData2) / sizeof(char));
-                    olaftoa(myICM.accZ(), tempData3, 2, sizeof(tempData3) / sizeof(char));
-                    sprintf(tempData, "%s,%s,%s,", tempData1, tempData2, tempData3);
-                    strcat(outputData, tempData);
-                    sprintf(tempData, "%s,", tempData1);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                    sprintf(tempData, "%s,", tempData2);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                    sprintf(tempData, "%s,", tempData3);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                }
-                if (settings.logIMUGyro) {
-                    olaftoa(myICM.gyrX(), tempData1, 2, sizeof(tempData1) / sizeof(char));
-                    olaftoa(myICM.gyrY(), tempData2, 2, sizeof(tempData2) / sizeof(char));
-                    olaftoa(myICM.gyrZ(), tempData3, 2, sizeof(tempData3) / sizeof(char));
-                    sprintf(tempData, "%s,%s,%s,", tempData1, tempData2, tempData3);
-                    strcat(outputData, tempData);
-                    sprintf(tempData, "%s,", tempData1);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                    sprintf(tempData, "%s,", tempData2);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                    sprintf(tempData, "%s,", tempData3);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                }
-                if (settings.logIMUMag) {
-                    olaftoa(myICM.magX(), tempData1, 2, sizeof(tempData1) / sizeof(char));
-                    olaftoa(myICM.magY(), tempData2, 2, sizeof(tempData2) / sizeof(char));
-                    olaftoa(myICM.magZ(), tempData3, 2, sizeof(tempData3) / sizeof(char));
-                    sprintf(tempData, "%s,%s,%s,", tempData1, tempData2, tempData3);
-                    strcat(outputData, tempData);
-                    sprintf(tempData, "%s,", tempData1);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                    sprintf(tempData, "%s,", tempData2);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                    sprintf(tempData, "%s,", tempData3);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                }
-                if (settings.logIMUTemp) {
-                    olaftoa(myICM.temp(), tempData1, 2, sizeof(tempData1) / sizeof(char));
-                    sprintf(tempData, "%s,", tempData1);
-                    strcat(outputData, tempData);
-                    updateBLECharacteristic(&bleCharacteristic, tempData);
-                }
-            }
-            //else
-            //{
-            //  printDebug("getData: myICM.dataReady = " + (String)myICM.dataReady() + "\r\n");
-            //}
-        } else {
-            ICM_20948_Status_e fifoRes = myICM.readDMPdataFromFIFO(&dmpData);
-//            SerialPrintf2("%d\n", fifoRes);
-            if (fifoRes != ICM_20948_Stat_FIFONoDataAvail) {
-                newImuDataFlag = true;
-            }
-//            newImuDataFlag = true;
-            while (myICM.status == ICM_20948_Stat_FIFOMoreDataAvail) {
-                myICM.readDMPdataFromFIFO(&dmpData); // Empty the FIFO - make sure data contains the most recent data
-            }
-            if (settings.imuLogDMPQuat6) {
-                olaftoa(((double) dmpData.Quat6.Data.Q1) / 1073741824.0, tempData1, 5, sizeof(tempData1) / sizeof(char));
-                olaftoa(((double) dmpData.Quat6.Data.Q2) / 1073741824.0, tempData2, 5, sizeof(tempData2) / sizeof(char));
-                olaftoa(((double) dmpData.Quat6.Data.Q3) / 1073741824.0, tempData3, 5, sizeof(tempData3) / sizeof(char));
-                sprintf(tempData, "%s,%s,%s,", tempData1, tempData2, tempData3);
-                strcat(outputData, tempData);
-                sprintf(tempData, "%s,", tempData1);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%s,", tempData2);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%s,", tempData3);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-//        if ((float)dmpData.Quat6.Data.Q1 != lastMeasurementValue) {
+        ICM_20948_Status_e fifoRes = myICM.readDMPdataFromFIFO(&dmpData);
+        if (fifoRes != ICM_20948_Stat_FIFONoDataAvail) {
+            newImuDataFlag = true;
+        }
+        while (myICM.status == ICM_20948_Stat_FIFOMoreDataAvail) {
+            myICM.readDMPdataFromFIFO(&dmpData); // Empty the FIFO - make sure data contains the most recent data
+        }
+        if (newImuDataFlag) {
+            //        if ((float)dmpData.Quat6.Data.Q1 != lastMeasurementValue) {
 //            lastMeasurementValue = (float)dmpData.Quat6.Data.Q1;
 //            measurementCount++;
 //        }
-                outputDataBin.number.Q1 = dmpData.Quat6.Data.Q1;
-                outputDataBin.number.Q2 = dmpData.Quat6.Data.Q2;
-                outputDataBin.number.Q3 = dmpData.Quat6.Data.Q3;
-            }
-            if (settings.imuLogDMPQuat9) {
-                olaftoa(((double) dmpData.Quat9.Data.Q1) / 1073741824.0, tempData1, 5, sizeof(tempData1) / sizeof(char));
-                olaftoa(((double) dmpData.Quat9.Data.Q2) / 1073741824.0, tempData2, 5, sizeof(tempData2) / sizeof(char));
-                olaftoa(((double) dmpData.Quat9.Data.Q3) / 1073741824.0, tempData3, 5, sizeof(tempData3) / sizeof(char));
-                sprintf(tempData, "%s,%s,%s,%d,", tempData1, tempData2, tempData3, dmpData.Quat9.Data.Accuracy);
-                strcat(outputData, tempData);
-                sprintf(tempData, "%s,", tempData1);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%s,", tempData2);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%s,", tempData3);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Quat9.Data.Accuracy);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-            }
-            if (settings.imuLogDMPAccel) {
-                sprintf(tempData, "%d,%d,%d,", dmpData.Raw_Accel.Data.X, dmpData.Raw_Accel.Data.Y, dmpData.Raw_Accel.Data.Z);
-                strcat(outputData, tempData);
-                sprintf(tempData, "%d,", dmpData.Raw_Accel.Data.X);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Raw_Accel.Data.Y);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Raw_Accel.Data.Z);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
+            outputDataBin.number.Q1 = dmpData.Quat6.Data.Q1;
+            outputDataBin.number.Q2 = dmpData.Quat6.Data.Q2;
+            outputDataBin.number.Q3 = dmpData.Quat6.Data.Q3;
 //        if ((float)dmpData.Raw_Accel.Data.X != lastMeasurementValue) {
 //            lastMeasurementValue = (float)dmpData.Raw_Accel.Data.X;
 //            measurementCount++;
 //        }
-                outputDataBin.number.X = dmpData.Raw_Accel.Data.X;
-                outputDataBin.number.Y = dmpData.Raw_Accel.Data.Y;
-                outputDataBin.number.Z = dmpData.Raw_Accel.Data.Z;
-            }
-            if (settings.imuLogDMPGyro) {
-                sprintf(tempData, "%d,%d,%d,", dmpData.Raw_Gyro.Data.X, dmpData.Raw_Gyro.Data.Y, dmpData.Raw_Gyro.Data.Z);
-                strcat(outputData, tempData);
-                sprintf(tempData, "%d,", dmpData.Raw_Gyro.Data.X);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Raw_Gyro.Data.Y);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Raw_Gyro.Data.Z);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-            }
-            if (settings.imuLogDMPCpass) {
-                sprintf(tempData, "%d,%d,%d,", dmpData.Compass.Data.X, dmpData.Compass.Data.Y, dmpData.Compass.Data.Z);
-                strcat(outputData, tempData);
-                sprintf(tempData, "%d,", dmpData.Compass.Data.X);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Compass.Data.Y);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-                sprintf(tempData, "%d,", dmpData.Compass.Data.Z);
-                updateBLECharacteristic(&bleCharacteristic, tempData);
-            }
+//            measurementCount++;
+            outputDataBin.number.X = dmpData.Raw_Accel.Data.X;
+            outputDataBin.number.Y = dmpData.Raw_Accel.Data.Y;
+            outputDataBin.number.Z = dmpData.Raw_Accel.Data.Z;
         }
     }
 
-    //Append all external sensor data on linked list to outputData
-    gatherDeviceValues(&bleCharacteristic);
-
-    if (settings.logHertz) {
+    if (false) {
         uint64_t currentMillis;
 
         //If we are sleeping between readings then we cannot rely on millis() as it is powered down
@@ -302,21 +106,11 @@ void getData() {
             actualRate = 0.0;
         else
             actualRate = measurementCount * 1000.0 / (currentMillis - measurementStartTime);
-        olaftoa(actualRate, tempData1, 3, sizeof(tempData) / sizeof(char));
-        sprintf(tempData, "%s,", tempData1);
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
+//        olaftoa(actualRate, tempData1, 3, sizeof(tempData) / sizeof(char));
+        if (measurementCount % 1000 == 0) {
+            SerialPrintf2("%d\n", (int) actualRate);
+        }
     }
-
-    if (settings.printMeasurementCount) {
-        sprintf(tempData, "%d,", measurementTotal);
-        strcat(outputData, tempData);
-        updateBLECharacteristic(&bleCharacteristic, tempData);
-    }
-
-    strcat(outputData, "\r\n");
-
-    totalCharactersPrinted += strlen(outputData);
 }
 
 //Read values from the devices on the node list
