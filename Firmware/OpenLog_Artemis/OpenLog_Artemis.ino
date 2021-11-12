@@ -430,7 +430,8 @@ Stream *DSERIAL;
 
 BLEService bleService(BLE_UUID("0000"));
 BLEIntCharacteristic statusCharacteristic(BLE_UUID("0001"), BLERead | BLENotify); // 0 idle, 1 recording, 2 error
-BLEIntCharacteristic commandCharacteristic(BLE_UUID("0002"), BLEWrite); // 1 to start recording, 2 to stop recording
+BLEIntCharacteristic startRecordingCharacteristic(BLE_UUID("0002"), BLEWrite); // write ms until start
+BLEIntCharacteristic stopRecordingCharacteristic(BLE_UUID("0005"), BLEWrite); // write ms until stop
 BLEStringCharacteristic fileNameCharacteristic(BLE_UUID("0003"), BLEWrite, kMessageMax);
 BLEUnsignedIntCharacteristic rtcTimeCharacteristic(BLE_UUID("0004"), BLEWrite);
 
@@ -488,6 +489,8 @@ BLEStringCharacteristic bleCharacteristic49(kCharacteristicUUID49, BLERead | BLE
 int numBLECharacteristics = 0;
 char bleCharacteristicsValues[kMaxCharacteristics][kMessageMax];
 
+unsigned long commandFutureTime = 0;
+unsigned int commandFlag = 0;
 
 
 void ConnectHandler(BLEDevice central) {
@@ -513,58 +516,34 @@ void onTimeWritten(BLEDevice central, BLECharacteristic characteristic) {
     SerialPrintf2("%u\n", epoch_rcv)
 }
 
-void onCommandWritten(BLEDevice central, BLECharacteristic characteristic) {
+void onStartRecording(BLEDevice central, BLECharacteristic characteristic) {
     if (settings.enableSD && online.microSD) {
-//        //Close log files before showing sdCardMenu
-//        if (online.dataLogging == true) {
-//            sensorDataFile.sync();
-//            updateDataFileAccess(&sensorDataFile); // Update the file access time & date
-//            sensorDataFile.close();
-//        }
-//        if (online.serialLogging == true) {
-//            serialDataFile.sync();
-//            updateDataFileAccess(&serialDataFile); // Update the file access time & date
-//            serialDataFile.close();
-//        }
-
         int32_t command_value;
         characteristic.readValue(command_value);
 
         SerialPrint(F("BLE Command recieved! Value: "));
         SerialPrintf2("%i\n", command_value)
 
-        switch (command_value) {
-            case 1:
-                SerialPrint(F("Recording start..."));
-                if (online.dataLogging == false) {
-                    String string = fileNameCharacteristic.value();
-                    if (string == "") {
-                        string = "dataLog";
-                    }
-                    strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, string.c_str()));
-                    beginDataLogging(); //180ms
-                    if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
-                    statusCharacteristic.writeValue(online.dataLogging ? 1 : 2);
-                }
-                break;
-            case 2:
-                SerialPrint(F("Recording stop..."));
-                if (online.dataLogging == true) {
-                    sensorDataFile.sync();
-                    updateDataFileAccess(&sensorDataFile); // Update the file access time & date
-                    sensorDataFile.close();
-                    online.dataLogging = false;
-                    statusCharacteristic.writeValue(0);
-                }
-                break;
-            default:
-                SerialPrint(F("Unknown command!"));
-                break;
-        }
-    }
-    measurementCount = 0;
-    measurementStartTime = bestMillis();
 
+        SerialPrint(F("Recording start..."));
+        commandFutureTime = millis() + command_value;
+        commandFlag = 1;
+    }
+}
+
+
+void onStopRecording(BLEDevice central, BLECharacteristic characteristic) {
+    if (settings.enableSD && online.microSD) {
+        int32_t command_value;
+        characteristic.readValue(command_value);
+
+        SerialPrint(F("BLE Command recieved! Value: "));
+        SerialPrintf2("%i\n", command_value)
+
+        SerialPrint(F("Recording stop..."));
+        commandFutureTime = millis() + command_value;
+        commandFlag = 2;
+    }
 }
 
 void setup() {
@@ -734,11 +713,13 @@ void setup() {
             BLE.setAdvertisedService(bleService); //Add the service UUID
 
             bleService.addCharacteristic(statusCharacteristic);
-            bleService.addCharacteristic(commandCharacteristic);
+            bleService.addCharacteristic(startRecordingCharacteristic);
+            bleService.addCharacteristic(stopRecordingCharacteristic);
             bleService.addCharacteristic(fileNameCharacteristic);
             bleService.addCharacteristic(rtcTimeCharacteristic);
 
-            commandCharacteristic.setEventHandler(BLEWritten, onCommandWritten);
+            startRecordingCharacteristic.setEventHandler(BLEWritten, onStartRecording);
+            stopRecordingCharacteristic.setEventHandler(BLEWritten, onStopRecording);
             rtcTimeCharacteristic.setEventHandler(BLEWritten, onTimeWritten);
             BLE.setEventHandler(BLEConnected, ConnectHandler);
             BLE.setEventHandler(BLEDisconnected, DisconnectHandler);
@@ -764,6 +745,7 @@ void setup() {
         menuMain();
 
     SerialPrintln(F("Setup complete!"));
+    digitalWrite(PIN_STAT_LED, LOW);
 }
 
 void loop() {
@@ -772,6 +754,49 @@ void loop() {
 
     if (usingBLE)
     BLEDevice central = BLE.central();
+
+
+    if (commandFlag != 0) {
+        unsigned long currentTime = millis();
+        if (currentTime < commandFutureTime) {
+            delay(commandFutureTime - currentTime);
+        }
+        switch (commandFlag) {
+            case 1:
+                SerialPrint(F("Recording start..."));
+                if (online.dataLogging == false) {
+                    String string = fileNameCharacteristic.value();
+                    if (string == "") {
+                        string = "dataLog";
+                    }
+                    strcpy(sensorDataFileName, findNextAvailableLog(settings.nextDataLogNumber, string.c_str()));
+                    beginDataLogging(); //180ms
+                    if (settings.showHelperText == true) printHelperText(false, true); //printHelperText to sensor file
+                    statusCharacteristic.writeValue(online.dataLogging ? 1 : 2);
+                    if (online.dataLogging) digitalWrite(PIN_STAT_LED, HIGH);
+                }
+                break;
+            case 2:
+                SerialPrint(F("Recording stop..."));
+                if (online.dataLogging == true) {
+                    sensorDataFile.sync();
+                    updateDataFileAccess(&sensorDataFile); // Update the file access time & date
+                    sensorDataFile.close();
+                    online.dataLogging = false;
+                    statusCharacteristic.writeValue(0);
+                    digitalWrite(PIN_STAT_LED, LOW);
+                }
+                break;
+            default:
+                SerialPrint(F("Unknown command!"));
+                break;
+        }
+        measurementCount = 0;
+        measurementStartTime = bestMillis();
+        commandFlag = 0;
+    }
+    
+
 
     if ((Serial.available()) || ((settings.useTxRxPinsForTerminal == true) && (Serial1.available())))
         menuMain(); //Present user menu
@@ -797,7 +822,6 @@ void loop() {
         if (settings.logData == true && newImuDataFlag) {
             newImuDataFlag = false;
             if (settings.enableSD && online.microSD) {
-                digitalWrite(PIN_STAT_LED, HIGH);
 //                sensorDataFile.write(&outputDataBin.number.stamp, sizeof(outputDataBin.number.stamp));
                 sensorDataFile.write(&outputDataBin.number.micros, sizeof(outputDataBin.number.micros));
                 sensorDataFile.write(&outputDataBin.number.Q1, sizeof(outputDataBin.number.Q1));
@@ -806,7 +830,6 @@ void loop() {
                 sensorDataFile.write(&outputDataBin.number.X, sizeof(outputDataBin.number.X));
                 sensorDataFile.write(&outputDataBin.number.Y, sizeof(outputDataBin.number.Y));
                 sensorDataFile.write(&outputDataBin.number.Z, sizeof(outputDataBin.number.Z));
-                digitalWrite(PIN_STAT_LED, LOW);
             }
         }
     }
