@@ -1,39 +1,28 @@
 void loadSettings()
-{
-  //First load any settings from NVM
-  //After, we'll load settings from config file if available
-  //We'll then re-record settings so that the settings from the file over-rides internal NVM settings
-//
-//  //Check to see if EEPROM is blank
-//  uint32_t testRead = 0;
-//  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
-//  {
-//    SerialPrintln(F("EEPROM is blank. Default settings applied"));
-//    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-//  }
-//
-//  //Check that the current settings struct size matches what is stored in EEPROM
-//  //Misalignment happens when we add a new feature or setting
-//  int tempSize = 0;
-//  EEPROM.get(0, tempSize); //Load the sizeOfSettings
-//  if (tempSize != sizeof(settings))
-//  {
-//    SerialPrintln(F("Settings wrong size. Default settings applied"));
-//    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-//  }
-//
-//  //Check that the olaIdentifier is correct
-//  //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
-//  int tempIdentifier = 0;
-//  EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
-//  if (tempIdentifier != OLA_IDENTIFIER)
-//  {
-//    SerialPrintln(F("Settings are not valid for this variant of the OLA. Default settings applied"));
-//    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-//  }
-//
-//  //Read current settings
-//  EEPROM.get(0, settings);
+  //Check to see if EEPROM is blank
+  uint32_t testRead = 0;
+  if (EEPROM.get(0, testRead) != 0xFFFFFFFF)
+  {
+      //Check that the current settings struct size matches what is stored in EEPROM
+      //Misalignment happens when we add a new feature or setting
+      int tempSize = 0;
+      EEPROM.get(0, tempSize); //Load the sizeOfSettings
+      if (tempSize == sizeof(foot))
+      {
+          int tempIdentifier = 0;
+          EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
+          if (tempIdentifier == 12)
+          {
+              EEPROM.get(0, foot);
+          }
+      }
+  }
+
+
+
+  // only needs to be done once
+//  foot.isLeft = true;
+//  EEPROM.put(0, foot);
 
   loadSystemSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
 //  //Record these new settings to EEPROM and config file to be sure they are the same

@@ -428,6 +428,13 @@ struct struct_settings {
   bool useBLE = true;
 } settings;
 
+
+struct struct_foot {
+    int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
+    int magic = 12;
+    bool isLeft = true;
+} foot;
+
 //These are the devices on board OpenLog that may be on or offline.
 struct struct_online {
   bool microSD = false;

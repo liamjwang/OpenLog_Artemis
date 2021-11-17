@@ -708,8 +708,14 @@ void setup() {
         if (!BLE.begin()) {
             SerialPrintln(F("BLE.begin failed!"));
         } else {
-            BLE.setLocalName(kTargetServiceName);
-            BLE.setDeviceName(kTargetServiceName);
+
+            const char *name = "";
+            if (foot.isLeft)
+                name = "Artemis Left";
+            else
+                name = "Artemis Right";
+            BLE.setLocalName(name);
+            BLE.setDeviceName(name);
             BLE.setAdvertisedService(bleService); //Add the service UUID
 
             bleService.addCharacteristic(statusCharacteristic);
