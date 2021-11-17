@@ -84,6 +84,47 @@ void getData() {
             outputDataBin.number.Q1 = dmpData.Quat6.Data.Q1;
             outputDataBin.number.Q2 = dmpData.Quat6.Data.Q2;
             outputDataBin.number.Q3 = dmpData.Quat6.Data.Q3;
+//            double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+//            double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+//            double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+//
+//            /*
+//            SERIAL_PORT.print(F("Q1:"));
+//            SERIAL_PORT.print(q1, 3);
+//            SERIAL_PORT.print(F(" Q2:"));
+//            SERIAL_PORT.print(q2, 3);
+//            SERIAL_PORT.print(F(" Q3:"));
+//            SERIAL_PORT.println(q3, 3);
+//      */
+//
+//            // Convert the quaternions to Euler angles (roll, pitch, yaw)
+//            // https://en.wikipedia.org/w/index.php?title=Conversion_between_quaternions_and_Euler_angles&section=8#Source_code_2
+//
+//            double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+//
+//            double q2sqr = q2 * q2;
+//
+//            // roll (x-axis rotation)
+//            double t0 = +2.0 * (q0 * q1 + q2 * q3);
+//            double t1 = +1.0 - 2.0 * (q1 * q1 + q2sqr);
+//            double roll = atan2(t0, t1) * 180.0 / PI;
+//
+//            // pitch (y-axis rotation)
+//            double t2 = +2.0 * (q0 * q2 - q3 * q1);
+//            t2 = t2 > 1.0 ? 1.0 : t2;
+//            t2 = t2 < -1.0 ? -1.0 : t2;
+//            double pitch = asin(t2) * 180.0 / PI;
+//
+//            // yaw (z-axis rotation)
+//            double t3 = +2.0 * (q0 * q3 + q1 * q2);
+//            double t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
+//            double yaw = atan2(t3, t4) * 180.0 / PI;
+//            Serial.print(roll);
+//            Serial.print(F(","));
+//            Serial.print(pitch);
+//            Serial.print(F(","));
+//            Serial.println(yaw);
+//
 //        if ((float)dmpData.Raw_Accel.Data.X != lastMeasurementValue) {
 //            lastMeasurementValue = (float)dmpData.Raw_Accel.Data.X;
 //            measurementCount++;

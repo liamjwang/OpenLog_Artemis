@@ -1443,11 +1443,17 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
     // Configure Accel scaling to DMP
     // The DMP scales accel raw data internally to align 1g as 2^25
     // In order to align internal accel raw data 2^25 = 1g write 0x04000000 when FSR is 4g
-    const unsigned char accScale[4] = {0x04, 0x00, 0x00, 0x00};
+    if (myFSS.a != gpm8) { // update this if you do change the scaling factor
+        while (true) {
+            Serial.println("!!!!---------------- DMP accel scaling needs to be updated, right now its configured for gpm8 ----------!!!!");
+            delay(1000);
+        }
+    }
+    const unsigned char accScale[4] = {0x08, 0x00, 0x00, 0x00};
     result = writeDMPmems(ACC_SCALE, 4, &accScale[0]);
     if (result > worstResult) worstResult = result; // Write accScale to ACC_SCALE DMP register
     // In order to output hardware unit data as configured FSR write 0x00040000 when FSR is 4g
-    const unsigned char accScale2[4] = {0x00, 0x04, 0x00, 0x00};
+    const unsigned char accScale2[4] = {0x00, 0x08, 0x00, 0x00};
     result = writeDMPmems(ACC_SCALE2, 4, &accScale2[0]);
     if (result > worstResult) worstResult = result; // Write accScale2 to ACC_SCALE2 DMP register
 
@@ -1517,6 +1523,12 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
     // 1000dps : 2^27
     //  500dps : 2^26
     //  250dps : 2^25
+    if (myFSS.g != dps2000) { // update this if you do change the scaling factor
+        while (true) {
+            Serial.println("!!!!---------------- DMP dps scaling needs to be updated, right now its configured for dps2000 ----------!!!!");
+            delay(1000);
+        }
+    }
     const unsigned char gyroFullScale[4] = {0x10, 0x00, 0x00, 0x00}; // 2000dps : 2^28
     result = writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]);
     if (result > worstResult) worstResult = result;
